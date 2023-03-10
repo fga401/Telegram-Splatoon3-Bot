@@ -1,0 +1,9 @@
+python-telegram-bot==20.1
+jsonpath-ng==1.5.3
+
+beautifulsoup4==4.11.2
+msgpack_python==0.5.6
+packaging==23.0
+pymmh3==0.0.5
+requests==2.28.2
+msgpack-python~=0.5.6
