@@ -2,5 +2,7 @@
   "logging": {
     "level": "debug"
   },
-  "user": "123123"
+  "app": {
+    "max_profile": 5
+  }
 }

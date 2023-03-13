@@ -6,16 +6,18 @@ import config
 
 # init argparse
 parser = argparse.ArgumentParser(description='run splatoon3 bot')
-parser.add_argument('-c', '--config', type=str, required=True, metavar='<config_path>', help='path to config')
-parser.add_argument('-t', '--token', type=str, required=True, metavar='<telegram_bot_token>', help='bot\'s API token')
-parser.add_argument('-w', '--whitelist', type=str, action='append', metavar='<username>', help='whitelisted users that bot will response to')
-parser.add_argument('--overwrite', type=str, action='append', metavar='<config_key>=<value>', help='overwrite config')
+parser.add_argument('-c', '--config', type=str, required=True, metavar='<config_path>', help='path to config.')
+parser.add_argument('-t', '--token', type=str, required=True, metavar='<telegram_bot_token>', help='bot\'s API token.')
+parser.add_argument('-w', '--whitelist', type=str, action='append', default=[], metavar='<username>', help='whitelisted users that bot will response to.')
+parser.add_argument('-a', '--admin', type=str, action='append', default=[], metavar='<username>', help='admin users. They will be treated as whitelisted users too.')
+parser.add_argument('--overwrite', type=str, action='append', metavar='<config_key>=<value>', help='overwrite config.')
 args = parser.parse_args()
 
 # init config
 config.load(args.config, args_overwrite=args.overwrite)
 config.set(config.BOT_TOKEN, args.token)
-config.set(config.BOT_WHITELIST, args.whitelist)
+config.set(config.BOT_ADMIN, set(args.admin))
+config.set(config.BOT_WHITELIST, set(args.whitelist + args.admin))
 
 # init logging
 logging.basicConfig(
