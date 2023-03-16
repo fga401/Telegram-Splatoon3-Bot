@@ -1,11 +1,12 @@
 from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 
-from bot import profiles
+from bot import profiles, data
 from bot.whitelist import whitelist_filter
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    data.init_bot_data(context)
     profiles.init_user_data(context)
     await profiles.profile_manage(update, context)
 

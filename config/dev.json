@@ -4,5 +4,21 @@
   },
   "app": {
     "max_profile": 5
+  },
+  "nintendo": {
+    "splatnet3_url": "https://api.lp1.av5ja.srv.nintendo.net",
+    "f_gen_url": "https://api.imink.app/f",
+    "app_version": {
+      "fallback": "2.5.0",
+      "update_interval_in_seconds": 200
+    },
+    "s3s_version": {
+      "fallback": "0.3.4",
+      "update_interval_in_seconds": 200
+    },
+    "webview_version": {
+      "fallback": "3.0.0-2857bc50",
+      "update_interval_in_seconds": 200
+    }
   }
 }

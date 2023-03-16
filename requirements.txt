@@ -1,4 +1,4 @@
-python-telegram-bot==20.1
+python-telegram-bot[job-queue]==20.1
 jsonpath-ng==1.5.3
 pytz==2022.7.1
 
