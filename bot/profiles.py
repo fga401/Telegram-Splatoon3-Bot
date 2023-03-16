@@ -11,7 +11,7 @@ import config
 import locales
 import nintendo.login
 import nintendo.utils
-from bot.data import BotData
+from bot.data import BotData, UserData, Profile
 from bot.utils import CallbackData, whitelist_filter
 from locales import _
 
@@ -33,28 +33,6 @@ class ProfileAddingState:
     Timezone = 1
     Language = 2
     Name = 3
-
-
-class UserData:
-    Profiles = 'PROFILES'
-    Current = 'CURRENT'
-    Pending = 'PENDING'
-    Verifier = 'VERIFIER'
-    MessageID_Name = 'MSG_ID_NAME'
-    MessageID_Link = 'MSG_ID_LINK'
-    MessageID_Timezone = 'MSG_ID_TZ'
-
-
-@dataclass
-class Profile:
-    id: int = 0
-    name: str = ''
-    account_name: str = ''
-    session_token: str = ''
-    gtoken: str = ''
-    bullet_token: str = ''
-    language: str = ''
-    timezone: str = ''
 
 
 def init_user_data(context: ContextTypes.DEFAULT_TYPE):

@@ -1,4 +1,4 @@
-import logging
+from dataclasses import dataclass
 
 from telegram.ext import ContextTypes
 
@@ -9,6 +9,28 @@ class BotData:
     NintendoAppVersion = 'NINTENDO_APP_VERSION'
     S3SVersion = 'S3S_VERSION'
     WebviewVersion = 'WEBVIEW_VERSION'
+
+
+class UserData:
+    Profiles = 'PROFILES'
+    Current = 'CURRENT'
+    Pending = 'PENDING'
+    Verifier = 'VERIFIER'
+    MessageID_Name = 'MSG_ID_NAME'
+    MessageID_Link = 'MSG_ID_LINK'
+    MessageID_Timezone = 'MSG_ID_TZ'
+
+
+@dataclass
+class Profile:
+    id: int = 0
+    name: str = ''
+    account_name: str = ''
+    session_token: str = ''
+    gtoken: str = ''
+    bullet_token: str = ''
+    language: str = ''
+    timezone: str = ''
 
 
 def init_bot_data(context: ContextTypes.DEFAULT_TYPE):

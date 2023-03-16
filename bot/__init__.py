@@ -22,11 +22,20 @@ def run():
             callback_data=False,
         )
     )
-    request = BackoffRetryRequest()
+    request = BackoffRetryRequest(connection_pool_size=256)
 
-    application = ApplicationBuilder().token(config.get(config.BOT_TOKEN)).defaults(defaults).persistence(persistence).request(request).get_updates_request(request).build()
+    application = (
+        ApplicationBuilder()
+        .token(config.get(config.BOT_TOKEN))
+        .defaults(defaults)
+        .persistence(persistence)
+        .get_updates_request(request)
+        .request(request)
+        .build()
+    )
     application.add_handlers(start.handlers)
     application.add_handlers(profiles.handlers)
+    application.add_handlers(nintendo.handlers)
 
     application.job_queue.run_once(data.init_bot_data, when=0)
     application.job_queue.run_repeating(nintendo.update_nsoapp_version_job, first=10, interval=config.get(config.NINTENDO_APP_VERSION_UPDATE_INTERVAL))

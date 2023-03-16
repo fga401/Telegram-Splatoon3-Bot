@@ -13,4 +13,5 @@ NINTENDO_S3S_VERSION_UPDATE_INTERVAL = 'nintendo.s3s_version.update_interval_in_
 NINTENDO_WEBVIEW_VERSION_FALLBACK = 'nintendo.webview_version.fallback'
 NINTENDO_WEBVIEW_VERSION_UPDATE_INTERVAL = 'nintendo.webview_version.update_interval_in_seconds'
 NINTENDO_SPLATNET3_URL = 'nintendo.splatnet3_url'
+NINTENDO_SPLATNET3_GRAPHQL_URL = 'nintendo.splatnet3_graphql_url'
 NINTENDO_F_GEN_URL = 'nintendo.f_gen_url'

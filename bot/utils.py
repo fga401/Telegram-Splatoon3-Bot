@@ -1,7 +1,7 @@
 import re
 import sys
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, Optional
 
 from telegram import Message
 from telegram._utils.types import ODVInput
@@ -23,6 +23,26 @@ whitelist_filter = WhitelistFilter()
 
 
 class BackoffRetryRequest(HTTPXRequest):
+    def __init__(
+            self,
+            connection_pool_size: int = 1,
+            proxy_url: str = None,
+            read_timeout: Optional[float] = 5.0,
+            write_timeout: Optional[float] = 5.0,
+            connect_timeout: Optional[float] = 5.0,
+            pool_timeout: Optional[float] = 1.0,
+            http_version: str = "2",
+    ):
+        super().__init__(
+            connection_pool_size=connection_pool_size,
+            proxy_url=proxy_url,
+            read_timeout=read_timeout,
+            write_timeout=write_timeout,
+            connect_timeout=connect_timeout,
+            pool_timeout=pool_timeout,
+            http_version=http_version
+        )
+
     @utils.retry_with_backoff(retries=sys.maxsize)
     async def do_request(
             self,

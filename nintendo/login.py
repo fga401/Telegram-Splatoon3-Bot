@@ -15,7 +15,6 @@ import config
 import utils.retry
 from nintendo.utils import NintendoError
 
-
 # SET HTTP HEADERS
 APP_USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) ' \
                  'AppleWebKit/537.36 (KHTML, like Gecko) ' \
@@ -151,7 +150,7 @@ async def get_session_token(auth_code_verifier: bytes, link: str, nsoapp_version
     except:
         raise NintendoError(f'Failed to get session token. response = {r.text}')
 
-
+@utils.retry_with_backoff()
 async def get_gtoken(session_token, nsoapp_version=None, s3s_ver=None):
     """Provided the session_token, returns a GameWebToken JWT and account info."""
     f_gen_url = config.get(config.NINTENDO_F_GEN_URL)
@@ -310,6 +309,7 @@ async def get_gtoken(session_token, nsoapp_version=None, s3s_ver=None):
     return web_service_token, user_nickname, user_lang, user_country
 
 
+@utils.retry_with_backoff()
 async def call_f_api(id_token, step, s3s_ver=None):
     """Passes an naIdToken to the f generation API (default: imink) & fetches the response (f token, UUID, and timestamp)."""
     if s3s_ver is None:
@@ -343,6 +343,7 @@ async def call_f_api(id_token, step, s3s_ver=None):
             raise NintendoError(f"Couldn't connect to f generation API ({f_gen_url}). Please try again.")
 
 
+@utils.retry_with_backoff()
 async def get_bullet(web_service_token, user_lang, user_country, web_view_ver=None):
     """Given a gtoken, returns a bulletToken."""
 

@@ -7,6 +7,7 @@
   },
   "nintendo": {
     "splatnet3_url": "https://api.lp1.av5ja.srv.nintendo.net",
+    "splatnet3_graphql_url": "https://api.lp1.av5ja.srv.nintendo.net/api/graphql",
     "f_gen_url": "https://api.imink.app/f",
     "app_version": {
       "fallback": "2.5.0",
