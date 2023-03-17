@@ -1,7 +1,6 @@
 import asyncio
 import functools
 import json
-import logging
 import re
 
 import requests
@@ -9,20 +8,7 @@ import requests
 import config
 import utils
 from nintendo.login import get_webview_version, APP_USER_AGENT
-
-# TODO: update from Internet
-translate_rid = {
-    'HomeQuery': '22e2fa8294168003c21b00c333c35384',  # blank vars
-    'LatestBattleHistoriesQuery': '0176a47218d830ee447e10af4a287b3f',  # INK / blank vars - query1
-    'RegularBattleHistoriesQuery': '3baef04b095ad8975ea679d722bc17de',  # INK / blank vars - query1
-    'BankaraBattleHistoriesQuery': '0438ea6978ae8bd77c5d1250f4f84803',  # INK / blank vars - query1
-    'PrivateBattleHistoriesQuery': '8e5ae78b194264a6c230e262d069bd28',  # INK / blank vars - query1
-    'XBattleHistoriesQuery': '6796e3cd5dc3ebd51864dc709d899fc5',  # INK / blank vars - query1
-    'VsHistoryDetailQuery': '291295ad311b99a6288fc95a5c4cb2d2',  # INK / req "vsResultId" - query2
-    'CoopHistoryQuery': '2fd21f270d381ecf894eb975c5f6a716',  # SR  / blank vars - query1
-    'CoopHistoryDetailQuery': '379f0d9b78b531be53044bcac031b34b',  # SR  / req "coopHistoryDetailId" - query2
-    'MyOutfitCommonDataEquipmentsQuery': 'd29cd0c2b5e6bac90dd5b817914832f8'  # for Lean's seed checker
-}
+from nintendo.utils import ExpiredTokenError
 
 language_map = {
     '简体中文': 'zh-CN',
@@ -31,13 +17,12 @@ language_map = {
 
 
 @utils.retry_with_backoff()
-async def get_request_ids() -> str:
+async def get_graphql_request_map() -> dict[str, str]:
     """Fetch GraphQL request ID from GitHub"""
     file = await asyncio.get_event_loop().run_in_executor(None, requests.get, "https://raw.githubusercontent.com/nintendoapis/splatnet3-types/main/src/graphql.ts")
-    raw_map = re.search(r'export enum RequestId {(?P<raw_map>(.|\n|\r)*?)}', file.text).group('raw_map')
-    pairs = re.findall(r'\s*(\w+)\s*=\s*\'(\w+)\'\s*', raw_map)
-    logging.error(f'{pairs}')
-    return None
+    raw = re.search(r'export enum RequestId {(?P<raw>(.|\n|\r)*?)}', file.text).group('raw')
+    pairs = re.findall(r'\s*(\w+)\s*=\s*\'(\w+)\'\s*', raw)
+    return {p[0]: p[1] for p in pairs}
 
 
 def gen_graphql_body(sha256hash, varname=None, varvalue=None):
@@ -58,19 +43,15 @@ def gen_graphql_body(sha256hash, varname=None, varvalue=None):
     return json.dumps(great_passage)
 
 
-async def headbutt(bullet_token: str, language: str, force_lang: str = None, webview_version: str = None):
+async def headbutt(bullet_token: str, language: str, country: str = None, webview_version: str = None):
     """
     Returns a (dynamic!) header used for GraphQL requests.
 
     :arg force_lang example 'en-US'
     """
 
-    if force_lang:
-        lang = force_lang
-        country = force_lang[-2:]
-    else:
-        lang = language_map[language]
-        country = lang[-2:]
+    lang = language_map[language]
+    country = country
 
     if webview_version is None:
         webview_version = await get_webview_version()
@@ -92,11 +73,15 @@ async def headbutt(bullet_token: str, language: str, force_lang: str = None, web
     return graphql_head
 
 
-async def home(gtoken: str, bullet_token: str, language: str):
+@utils.retry_with_backoff(retries=3, skipped_exception=ExpiredTokenError)
+async def do_query(gtoken: str, bullet_token: str, language: str, country: str, query: str, varname=None, varvalue=None, webview_version=None) -> str:
     url = config.get(config.NINTENDO_SPLATNET3_GRAPHQL_URL)
-    sha = translate_rid["HomeQuery"]
-    headers = await headbutt(bullet_token, language)
+    sha = config.get(config.NINTENDO_GRAPHQL_REQUEST_MAP_FALLBACK)[query]
+    headers = await headbutt(bullet_token, language, country, webview_version)
+    data = gen_graphql_body(sha, varname, varvalue)
 
-    fn = functools.partial(requests.post, url, data=gen_graphql_body(sha), headers=headers, cookies=dict(_gtoken=gtoken))
+    fn = functools.partial(requests.post, url, data=data, headers=headers, cookies=dict(_gtoken=gtoken))
     response: requests.Response = await asyncio.get_event_loop().run_in_executor(None, fn)
-    logging.info(f'home. response = {response.json()}')
+    if response.status_code != 200:
+        raise ExpiredTokenError(f'response status code is not 200. url = {response.url}, body = {response.text}')
+    return response.text

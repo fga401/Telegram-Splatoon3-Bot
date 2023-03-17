@@ -1,6 +1,5 @@
 import datetime
 from copy import copy
-from dataclasses import dataclass
 from typing import Callable, Union
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Message
@@ -186,6 +185,8 @@ async def profile_input_name(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def profile_input_link(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    message = await update.message.reply_text(text=_('Processing your link...'))
+
     link = update.message.text
     auth_code_verifier = context.user_data[UserData.Verifier]
     nsoapp_version = context.bot_data[BotData.NintendoAppVersion]
@@ -204,7 +205,9 @@ async def profile_input_link(update: Update, context: ContextTypes.DEFAULT_TYPE)
     pending_profile.session_token = session_token
     pending_profile.gtoken = web_service_token
     pending_profile.bullet_token = bullet_token
+    pending_profile.country = user_country
 
+    await context.application.bot.delete_message(chat_id=message.chat_id, message_id=message.id)
     await context.application.bot.edit_message_text(chat_id=update.message.chat_id, message_id=context.user_data[UserData.MessageID_Link], text=_('Your account is <b>[{}]</b>.').format(user_nickname))
     keyboard = [
         [InlineKeyboardButton(l, callback_data=ProfileButtonCallback.Language.encode(l))] for l in locales.available_languages
@@ -342,7 +345,7 @@ def __show_profile_name(name: str, is_current: bool):
 
 
 def __message_profile_detail(_: Callable[[str], str], profile: Profile):
-    return _('\n  - Profile Name = <b>[{}]</b>\n  - Account Name = <b>[{}]</b>\n  - Language = <b>[{}]</b>\n  - Timezone = <b>[{}]</b>').format(profile.name, profile.account_name, profile.language, profile.timezone)
+    return _('\n  - Profile Name = <b>[{}]</b>\n  - Account Name = <b>[{}]</b>\n  - Country = <b>[{}]</b>\n  - Language = <b>[{}]</b>\n  - Timezone = <b>[{}]</b>').format(profile.name, profile.account_name, profile.country, profile.language, profile.timezone)
 
 
 def __message_profile_name_pattern(_: Callable[[str], str]):

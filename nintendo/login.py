@@ -150,6 +150,7 @@ async def get_session_token(auth_code_verifier: bytes, link: str, nsoapp_version
     except:
         raise NintendoError(f'Failed to get session token. response = {r.text}')
 
+
 @utils.retry_with_backoff()
 async def get_gtoken(session_token, nsoapp_version=None, s3s_ver=None):
     """Provided the session_token, returns a GameWebToken JWT and account info."""

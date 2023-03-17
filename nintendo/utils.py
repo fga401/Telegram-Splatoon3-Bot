@@ -8,6 +8,10 @@ class NintendoError(Exception):
     pass
 
 
+class ExpiredTokenError(NintendoError):
+    pass
+
+
 def is_valid_login_link(link: str) -> bool:
     if not link.startswith(link_prefix):
         return False

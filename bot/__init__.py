@@ -39,6 +39,7 @@ def run():
 
     application.job_queue.run_once(data.init_bot_data, when=0)
     application.job_queue.run_repeating(nintendo.update_nsoapp_version_job, first=10, interval=config.get(config.NINTENDO_APP_VERSION_UPDATE_INTERVAL))
-    application.job_queue.run_repeating(nintendo.update_s3s_version_job, first=10, interval=config.get(config.NINTENDO_APP_VERSION_UPDATE_INTERVAL))
-    application.job_queue.run_repeating(nintendo.update_webview_version_job, first=10, interval=config.get(config.NINTENDO_WEBVIEW_VERSION_UPDATE_INTERVAL))
+    application.job_queue.run_repeating(nintendo.update_s3s_version_job, first=20, interval=config.get(config.NINTENDO_APP_VERSION_UPDATE_INTERVAL))
+    application.job_queue.run_repeating(nintendo.update_webview_version_job, first=15, interval=config.get(config.NINTENDO_WEBVIEW_VERSION_UPDATE_INTERVAL))
+    application.job_queue.run_repeating(nintendo.update_graphql_request_map_job, first=5, interval=config.get(config.NINTENDO_GRAPHQL_REQUEST_MAP_UPDATE_INTERVAL))
     application.run_polling()
