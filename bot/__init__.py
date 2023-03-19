@@ -1,17 +1,19 @@
 import os.path
+import sqlite3
 
 import telegram.ext
 import telegram.request._httpxrequest
 from telegram.ext import Defaults, ApplicationBuilder, PicklePersistence, PersistenceInput
 
 import config
-from bot import profiles, start, nintendo, data
+from bot import profiles, start, jobs, data, nintendo
+from bot.data import Consts
 from bot.utils import BackoffRetryRequest
 
 
 def run():
     defaults = Defaults(
-        parse_mode=telegram.constants.ParseMode.HTML
+        parse_mode=telegram.constants.ParseMode.HTML,
     )
     persistence = PicklePersistence(
         filepath=os.path.join('data', 'data'),
@@ -23,7 +25,6 @@ def run():
         )
     )
     request = BackoffRetryRequest(connection_pool_size=256)
-
     application = (
         ApplicationBuilder()
         .token(config.get(config.BOT_TOKEN))
@@ -34,12 +35,10 @@ def run():
         .build()
     )
     application.add_handlers(start.handlers)
-    application.add_handlers(profiles.handlers)
     application.add_handlers(nintendo.handlers)
 
-    application.job_queue.run_once(data.init_bot_data, when=0)
-    application.job_queue.run_repeating(nintendo.update_nsoapp_version_job, first=10, interval=config.get(config.NINTENDO_APP_VERSION_UPDATE_INTERVAL))
-    application.job_queue.run_repeating(nintendo.update_s3s_version_job, first=20, interval=config.get(config.NINTENDO_APP_VERSION_UPDATE_INTERVAL))
-    application.job_queue.run_repeating(nintendo.update_webview_version_job, first=15, interval=config.get(config.NINTENDO_WEBVIEW_VERSION_UPDATE_INTERVAL))
-    application.job_queue.run_repeating(nintendo.update_graphql_request_map_job, first=5, interval=config.get(config.NINTENDO_GRAPHQL_REQUEST_MAP_UPDATE_INTERVAL))
+    profiles.init_profile(application)
+    data.init_bot_data(application)
+    jobs.init_jobs(application)
+
     application.run_polling()

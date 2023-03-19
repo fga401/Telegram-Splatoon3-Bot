@@ -15,35 +15,45 @@ import config
 import utils.retry
 from nintendo.utils import NintendoError
 
+logger = logging.getLogger('nintendo')
+
 # SET HTTP HEADERS
 APP_USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; Pixel 5) ' \
                  'AppleWebKit/537.36 (KHTML, like Gecko) ' \
                  'Chrome/94.0.4606.61 Mobile Safari/537.36'
 
+NSOAPP_VERSION = config.get(config.NINTENDO_APP_VERSION)
+S3S_VERSION = config.get(config.NINTENDO_S3S_VERSION)
+WEBVIEW_VERSION = config.get(config.NINTENDO_WEBVIEW_VERSION)
+
 
 @utils.retry_with_backoff()
-async def get_nsoapp_version() -> str:
+async def update_nsoapp_version() -> str:
     """Fetches the current Nintendo Switch Online app version from the Apple App Store and sets it globally."""
+    global NSOAPP_VERSION
     page = await asyncio.get_event_loop().run_in_executor(None, requests.get, "https://apps.apple.com/us/app/nintendo-switch-online/id1234806557")
     soup = BeautifulSoup(page.text, 'html.parser')
     elt = soup.find("p", {"class": "whats-new__latest__version"})
     version = elt.get_text().replace("Version ", "").strip()
-    return version
+    NSOAPP_VERSION = version
+    return NSOAPP_VERSION
 
 
 @utils.retry_with_backoff()
-async def get_s3s_version() -> str:
+async def update_s3s_version() -> str:
     """Fetch s3s version from GitHub"""
+    global S3S_VERSION
     latest_script = await asyncio.get_event_loop().run_in_executor(None, requests.get, "https://raw.githubusercontent.com/frozenpandaman/s3s/master/s3s.py")
     version = re.search(r'A_VERSION = "([\d.]*)"', latest_script.text).group(1)
-    return version
+    S3S_VERSION = version
+    return S3S_VERSION
 
 
 @utils.retry_with_backoff()
-async def get_webview_version() -> str:
+async def update_webview_version() -> str:
     """Finds & parses the SplatNet 3 main.js file to fetch the current site version and sets it globally."""
+    global WEBVIEW_VERSION
     url = config.get(config.NINTENDO_SPLATNET3_URL)
-
     app_head = {
         'Upgrade-Insecure-Requests': '1',
         'Accept': '*/*',
@@ -92,7 +102,8 @@ async def get_webview_version() -> str:
 
     version, revision = match.group('version'), match.group('revision')
     ver_string = f'{version}-{revision[:8]}'
-    return ver_string
+    WEBVIEW_VERSION = ver_string
+    return WEBVIEW_VERSION
 
 
 def login_link():
@@ -117,13 +128,11 @@ def login_link():
     return auth_code_verifier, f'https://accounts.nintendo.com/connect/1.0.0/authorize?{urllib.parse.urlencode(body)}'
 
 
-async def get_session_token(auth_code_verifier: bytes, link: str, nsoapp_version=None):
-    if nsoapp_version is None:
-        nsoapp_version = await get_nsoapp_version
+async def get_session_token(auth_code_verifier: bytes, link: str):
     session_token_code = re.search('de=(.*)&', link).group(1)
 
     app_head = {
-        'User-Agent': f'OnlineLounge/{nsoapp_version} NASDKAPI Android',
+        'User-Agent': f'OnlineLounge/{NSOAPP_VERSION} NASDKAPI Android',
         'Accept-Language': 'en-US',
         'Accept': 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -152,14 +161,9 @@ async def get_session_token(auth_code_verifier: bytes, link: str, nsoapp_version
 
 
 @utils.retry_with_backoff()
-async def get_gtoken(session_token, nsoapp_version=None, s3s_ver=None):
+async def get_gtoken(session_token):
     """Provided the session_token, returns a GameWebToken JWT and account info."""
     f_gen_url = config.get(config.NINTENDO_F_GEN_URL)
-
-    if nsoapp_version is None:
-        nsoapp_version = await get_nsoapp_version()
-    if s3s_ver is None:
-        s3s_ver = await get_s3s_version()
 
     app_head = {
         'Host': 'accounts.nintendo.com',
@@ -203,7 +207,7 @@ async def get_gtoken(session_token, nsoapp_version=None, s3s_ver=None):
     fn = functools.partial(requests.get, url, headers=app_head)
     r = await asyncio.get_event_loop().run_in_executor(None, fn)
     user_info = json.loads(r.text)
-    logging.info(f'Nintendo user_info = {user_info}')
+    logger.info(f'Nintendo user_info = {user_info}')
 
     user_nickname = user_info["nickname"]
     user_lang = user_info["language"]
@@ -213,7 +217,7 @@ async def get_gtoken(session_token, nsoapp_version=None, s3s_ver=None):
     body = {}
     try:
         id_token = id_response["id_token"]
-        f, uuid, timestamp = await call_f_api(id_token, 1, s3s_ver)
+        f, uuid, timestamp = await call_f_api(id_token, 1)
 
         parameter = {
             'f': f,
@@ -231,12 +235,12 @@ async def get_gtoken(session_token, nsoapp_version=None, s3s_ver=None):
 
     app_head = {
         'X-Platform': 'Android',
-        'X-ProductVersion': nsoapp_version,
+        'X-ProductVersion': NSOAPP_VERSION,
         'Content-Type': 'application/json; charset=utf-8',
         'Content-Length': str(990 + len(f)),
         'Connection': 'Keep-Alive',
         'Accept-Encoding': 'gzip',
-        'User-Agent': f'com.nintendo.znca/{nsoapp_version}(Android/7.1.2)',
+        'User-Agent': f'com.nintendo.znca/{NSOAPP_VERSION}(Android/7.1.2)',
     }
 
     url = 'https://api-lp1.znc.srv.nintendo.net/v3/Account/Login'
@@ -249,7 +253,7 @@ async def get_gtoken(session_token, nsoapp_version=None, s3s_ver=None):
     except:
         # retry once if 9403/9599 error from nintendo
         try:
-            f, uuid, timestamp = await call_f_api(id_token, 1, f_gen_url)
+            f, uuid, timestamp = await call_f_api(id_token, 1)
             body["parameter"]["f"] = f
             body["parameter"]["requestId"] = uuid
             body["parameter"]["timestamp"] = timestamp
@@ -262,17 +266,17 @@ async def get_gtoken(session_token, nsoapp_version=None, s3s_ver=None):
         except:
             raise NintendoError(f'Error from Nintendo (in Account/Login step): {json.dumps(splatoon_token, indent=2)}')
 
-        f, uuid, timestamp = await call_f_api(id_token, 2, f_gen_url)
+        f, uuid, timestamp = await call_f_api(id_token, 2)
 
     # get web service token
     app_head = {
         'X-Platform': 'Android',
-        'X-ProductVersion': nsoapp_version,
+        'X-ProductVersion': NSOAPP_VERSION,
         'Authorization': f'Bearer {id_token}',
         'Content-Type': 'application/json; charset=utf-8',
         'Content-Length': '391',
         'Accept-Encoding': 'gzip',
-        'User-Agent': f'com.nintendo.znca/{nsoapp_version}(Android/7.1.2)'
+        'User-Agent': f'com.nintendo.znca/{NSOAPP_VERSION}(Android/7.1.2)'
     }
 
     body = {}
@@ -295,7 +299,7 @@ async def get_gtoken(session_token, nsoapp_version=None, s3s_ver=None):
     except:
         # retry once if 9403/9599 error from nintendo
         try:
-            f, uuid, timestamp = await call_f_api(id_token, 2, f_gen_url)
+            f, uuid, timestamp = await call_f_api(id_token, 2)
             body["parameter"]["f"] = f
             body["parameter"]["requestId"] = uuid
             body["parameter"]["timestamp"] = timestamp
@@ -311,15 +315,13 @@ async def get_gtoken(session_token, nsoapp_version=None, s3s_ver=None):
 
 
 @utils.retry_with_backoff()
-async def call_f_api(id_token, step, s3s_ver=None):
+async def call_f_api(id_token, step):
     """Passes an naIdToken to the f generation API (default: imink) & fetches the response (f token, UUID, and timestamp)."""
-    if s3s_ver is None:
-        s3s_ver = await get_s3s_version()
     f_gen_url = config.get(config.NINTENDO_F_GEN_URL)
 
     try:
         api_head = {
-            'User-Agent': f's3s/{s3s_ver}',
+            'User-Agent': f's3s/{S3S_VERSION}',
             'Content-Type': 'application/json; charset=utf-8'
         }
         api_body = {
@@ -345,19 +347,16 @@ async def call_f_api(id_token, step, s3s_ver=None):
 
 
 @utils.retry_with_backoff()
-async def get_bullet(web_service_token, user_lang, user_country, web_view_ver=None):
+async def get_bullet(web_service_token, user_lang, user_country):
     """Given a gtoken, returns a bulletToken."""
-
     splatnet3_url = config.get(config.NINTENDO_SPLATNET3_URL)
-    if web_view_ver is None:
-        web_view_ver = await get_webview_version()
 
     app_head = {
         'Content-Length': '0',
         'Content-Type': 'application/json',
         'Accept-Language': user_lang,
         'User-Agent': APP_USER_AGENT,
-        'X-Web-View-Ver': web_view_ver,
+        'X-Web-View-Ver': WEBVIEW_VERSION,
         'X-NACOUNTRY': user_country,
         'Accept': '*/*',
         'Origin': splatnet3_url,

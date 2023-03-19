@@ -3,14 +3,14 @@ from copy import copy
 from typing import Callable, Union
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Message
-from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, filters
+from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, filters, Application
 from telegram.ext.filters import MessageFilter
 
 import config
 import locales
 import nintendo.login
 import nintendo.utils
-from bot.data import BotData, UserData, Profile
+from bot.data import UserData, Profile
 from bot.utils import CallbackData, whitelist_filter
 from locales import _
 
@@ -189,14 +189,11 @@ async def profile_input_link(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
     link = update.message.text
     auth_code_verifier = context.user_data[UserData.Verifier]
-    nsoapp_version = context.bot_data[BotData.NintendoAppVersion]
-    s3s_version = context.bot_data[BotData.S3SVersion]
-    webview_version = context.bot_data[BotData.WebviewVersion]
 
     try:
-        session_token = await nintendo.login.get_session_token(auth_code_verifier, link, nsoapp_version)
-        web_service_token, user_nickname, user_lang, user_country = await nintendo.login.get_gtoken(session_token, nsoapp_version, s3s_version)
-        bullet_token = await nintendo.login.get_bullet(web_service_token, user_lang, user_country, webview_version)
+        session_token = await nintendo.login.get_session_token(auth_code_verifier, link)
+        web_service_token, user_nickname, user_lang, user_country = await nintendo.login.get_gtoken(session_token)
+        bullet_token = await nintendo.login.get_bullet(web_service_token, user_lang, user_country)
     except nintendo.utils.NintendoError as e:
         await update.message.reply_text(text=_('Failed to get your Nintendo token. Please retry.\nerror = {}').format(e))
         return ProfileAddingState.Link
@@ -334,7 +331,7 @@ async def profile_delete(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     else:
         next_profile_id = context.user_data[UserData.Current]
         next_profile = context.user_data[UserData.Profiles][next_profile_id]
-        await query.edit_message_text(text=_('Profile <b>[{}]</b> was deleted.').format(deleted_profile) + _('Current profile is <b>[{}]</b>.').format(next_profile) + __message_profile_detail(_, next_profile), reply_markup=reply_markup)
+        await query.edit_message_text(text=_('Profile <b>[{}]</b> was deleted.').format(deleted_profile.name) + _('Current profile is <b>[{}]</b>.').format(next_profile) + __message_profile_detail(_, next_profile), reply_markup=reply_markup)
 
 
 def __show_profile_name(name: str, is_current: bool):
@@ -359,6 +356,10 @@ def __message_profile_timezone_pattern(_: Callable[[str], str]):
 class LoginLinkFilter(MessageFilter):
     def filter(self, message: Message):
         return nintendo.utils.is_valid_login_link(message.text)
+
+
+def init_profile(application: Application):
+    application.add_handlers(handlers)
 
 
 handlers = [
