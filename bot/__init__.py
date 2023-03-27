@@ -1,9 +1,10 @@
 import os.path
 import sqlite3
+import sys
 
 import telegram.ext
 import telegram.request._httpxrequest
-from telegram.ext import Defaults, ApplicationBuilder, PicklePersistence, PersistenceInput
+from telegram.ext import Defaults, ApplicationBuilder, PicklePersistence, PersistenceInput, AIORateLimiter
 
 import config
 from bot import profiles, start, jobs, data, nintendo
@@ -32,6 +33,7 @@ def run():
         .persistence(persistence)
         .get_updates_request(request)
         .request(request)
+        .rate_limiter(AIORateLimiter(max_retries=sys.maxsize))
         .build()
     )
     application.add_handlers(start.handlers)

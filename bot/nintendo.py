@@ -33,12 +33,15 @@ def auto_update_profile(fn):
         try:
             return await fn(*args, **kwargs)
         except ExpiredTokenError as e:
-            logger.error(e)
             args_name: list = inspect.getfullargspec(fn)[0]
-            if 'profile' in args_name:
-                idx = args_name.index('profile')
-                profile = args[idx]
+            idx = args_name.index('profile')
+            profile = args[idx]
+            logger.warning(f'Profile is expired. profile = {profile}, error = {e}')
+            try:
                 await update_token(profile)
+            except Exception as e:
+                logger.error(f'Failed to update user profile. profile = {profile}, error = {e}')
+                raise
             return await fn(*args, **kwargs)
         except:
             raise
@@ -56,7 +59,7 @@ async def stage_schedule(profile: Profile) -> str:
     return await nintendo.query.do_query(profile.gtoken, profile.bullet_token, profile.language, profile.country, nintendo.query.QueryKey.StageScheduleQuery)
 
 
-async def download_image(profile: Profile, url: str) -> np.ndarray:
+async def download_image(profile: Profile, url: str) -> bytes:
     return await nintendo.query.download_image(profile.gtoken, profile.bullet_token, profile.language, profile.country, url)
 
 

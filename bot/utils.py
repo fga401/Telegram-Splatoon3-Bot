@@ -3,6 +3,8 @@ import sys
 from dataclasses import dataclass
 from typing import Tuple, Optional
 
+import cv2
+import numpy as np
 from telegram import Message
 from telegram._utils.types import ODVInput
 from telegram.ext.filters import MessageFilter

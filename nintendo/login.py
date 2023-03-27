@@ -53,7 +53,7 @@ async def update_s3s_version() -> str:
 async def update_webview_version() -> str:
     """Finds & parses the SplatNet 3 main.js file to fetch the current site version and sets it globally."""
     global WEBVIEW_VERSION
-    url = config.get(config.NINTENDO_SPLATNET3_URL)
+    url = 'https://api.lp1.av5ja.srv.nintendo.net'
     app_head = {
         'Upgrade-Insecure-Requests': '1',
         'Accept': '*/*',
@@ -163,8 +163,6 @@ async def get_session_token(auth_code_verifier: bytes, link: str):
 @utils.retry_with_backoff()
 async def get_gtoken(session_token):
     """Provided the session_token, returns a GameWebToken JWT and account info."""
-    f_gen_url = config.get(config.NINTENDO_F_GEN_URL)
-
     app_head = {
         'Host': 'accounts.nintendo.com',
         'Accept-Encoding': 'gzip',
@@ -317,7 +315,7 @@ async def get_gtoken(session_token):
 @utils.retry_with_backoff()
 async def call_f_api(id_token, step):
     """Passes an naIdToken to the f generation API (default: imink) & fetches the response (f token, UUID, and timestamp)."""
-    f_gen_url = config.get(config.NINTENDO_F_GEN_URL)
+    f_gen_url = 'https://api.imink.app/f'
 
     try:
         api_head = {
@@ -349,7 +347,7 @@ async def call_f_api(id_token, step):
 @utils.retry_with_backoff()
 async def get_bullet(web_service_token, user_lang, user_country):
     """Given a gtoken, returns a bulletToken."""
-    splatnet3_url = config.get(config.NINTENDO_SPLATNET3_URL)
+    splatnet3_url = 'https://api.lp1.av5ja.srv.nintendo.net'
 
     app_head = {
         'Content-Length': '0',

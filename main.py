@@ -10,7 +10,7 @@ parser.add_argument('-t', '--token', type=str, required=True, metavar='<telegram
 parser.add_argument('-u', '--user', type=str, action='append', default=[], metavar='<username>', help='whitelisted users that bot will response to.')
 parser.add_argument('-U', '--admin', type=str, action='append', default=[], metavar='<username>', help='admin users. They will be treated as whitelisted users too.')
 parser.add_argument('--overwrite', type=str, action='append', metavar='<config_key>=<value>', help='overwrite config.')
-parser.add_argument('-s', '--storage-channel', type=str, required=True, metavar='<channel_id>', help='a channel that saves images.')
+parser.add_argument('-s', '--storage_channel', type=str, required=True, metavar='<channel_id>', help='a channel that saves images.')
 args = parser.parse_args()
 
 # init config
@@ -18,6 +18,7 @@ config.load(args.config, args_overwrite=args.overwrite)
 config.set(config.BOT_TOKEN, args.token)
 config.set(config.BOT_ADMIN, set(args.admin))
 config.set(config.BOT_WHITELIST, set(args.user + args.admin))
+config.set(config.BOT_STORAGE_CHANNEL, args.storage_channel)
 
 # init logging
 logging.basicConfig(

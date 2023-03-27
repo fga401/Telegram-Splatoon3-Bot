@@ -1,7 +1,8 @@
-python-telegram-bot[job-queue]==20.1
+python-telegram-bot[job-queue, rate-limiter]==20.1
 jsonpath-ng==1.5.3
 pytz==2022.7.1
 opencv-python==4.5.5.62
+numpy==1.24.2
 
 beautifulsoup4==4.11.2
 msgpack_python==0.5.6

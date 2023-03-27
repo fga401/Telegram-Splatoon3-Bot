@@ -1,7 +1,18 @@
+import os
 import urllib.parse
+
+import config
 
 link_prefix = 'npf71b963c1b7b6d119://auth#'
 link_prefix_len = len(link_prefix)
+
+if config.get(config.NINTENDO_PROXY_ENABLED):
+    proxies = {
+        'http': os.getenv('http_proxy', config.get(config.NINTENDO_PROXY_HTTP)),
+        'https': os.getenv('https_proxy', config.get(config.NINTENDO_PROXY_HTTPS)),
+    }
+else:
+    proxies = {}
 
 
 class NintendoError(Exception):

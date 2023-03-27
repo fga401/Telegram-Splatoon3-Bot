@@ -10,7 +10,7 @@ import requests
 import config
 import utils
 from nintendo.login import APP_USER_AGENT, WEBVIEW_VERSION
-from nintendo.utils import ExpiredTokenError
+from nintendo.utils import ExpiredTokenError, proxies
 
 language_map = {
     '简体中文': 'zh-CN',
@@ -66,7 +66,7 @@ async def headbutt(bullet_token: str, language: str, country: str):
         language = language_map[language]
     country = country
 
-    splatoon_url = config.get(config.NINTENDO_SPLATNET3_URL)
+    splatoon_url = 'https://api.lp1.av5ja.srv.nintendo.net'
 
     graphql_head = {
         'Authorization': f'Bearer {bullet_token}',  # update every time it's called with current global var
@@ -85,12 +85,12 @@ async def headbutt(bullet_token: str, language: str, country: str):
 
 @utils.retry_with_backoff(retries=3, skipped_exception=ExpiredTokenError)
 async def do_query(gtoken: str, bullet_token: str, language: str, country: str, query: str, varname=None, varvalue=None) -> str:
-    url = config.get(config.NINTENDO_SPLATNET3_GRAPHQL_URL)
+    url = 'https://api.lp1.av5ja.srv.nintendo.net/api/graphql'
     sha = graphql_query_map[query]
     headers = await headbutt(bullet_token, language, country)
     data = gen_graphql_body(sha, varname, varvalue)
 
-    fn = functools.partial(requests.get, url, data=data, headers=headers, cookies=dict(_gtoken=gtoken))
+    fn = functools.partial(requests.post, url, data=data, headers=headers, cookies=dict(_gtoken=gtoken), proxies=proxies)
     response: requests.Response = await asyncio.get_event_loop().run_in_executor(None, fn)
     if response.status_code != 200:
         raise ExpiredTokenError(f'response status code is not 200. url = {response.url}, body = {response.text}')
@@ -98,10 +98,9 @@ async def do_query(gtoken: str, bullet_token: str, language: str, country: str, 
 
 
 @utils.retry_with_backoff(retries=3, skipped_exception=ExpiredTokenError)
-async def download_image(gtoken: str, bullet_token: str, language: str, country: str, url: str) -> np.ndarray:
+async def download_image(gtoken: str, bullet_token: str, language: str, country: str, url: str) -> bytes:
     headers = await headbutt(bullet_token, language, country)
-    fn = functools.partial(requests.get, url, headers=headers, cookies=dict(_gtoken=gtoken))
+    fn = functools.partial(requests.get, url, headers=headers, cookies=dict(_gtoken=gtoken), proxies=proxies)
     response: requests.Response = await asyncio.get_event_loop().run_in_executor(None, fn)
-    buf = np.asarray(bytearray(response.content), dtype=np.uint8)
-    img = cv2.imdecode(buf, -1)
-    return img
+    buf = bytearray(response.content)
+    return buf

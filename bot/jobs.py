@@ -10,7 +10,7 @@ import nintendo.login
 import nintendo.query
 from bot.data import BotData, UserData, Profile
 from bot.nintendo import update_token, home, stage_schedule, download_image
-from bot.schedules import parse_schedules
+from bot.schedules import ScheduleParser, update_schedule_image
 from nintendo.utils import ExpiredTokenError
 
 logger = logging.getLogger('bot.job')
@@ -30,36 +30,20 @@ async def update_nso_version_job(context: ContextTypes.DEFAULT_TYPE):
     logger.info(f'Updated s3s version. version = {version}')
 
 
-async def keep_alive_task(user: str, profile_id: int, profiles: dict[int, Profile]):
-    profile = profiles[profile_id]
-    try:
-        await home(profile)
-    except ExpiredTokenError as e:
-        logger.info(f'Profile is expired. user = {user}, profile = {profile}, error = {e}')
-        try:
-            await update_token(profile)
-        except Exception as e:
-            logger.error(f'Failed to update user profile. user = {user}, profile = {profile}, error = {e}')
-    except Exception as e:
-        logger.error(f'Unknown error happened during checking user profile expiration. user = {user}, profile = {profile}, error = {e}')
-    else:
-        logger.info(f'Profile is up to date. user = {user}, profile = {profile}')
-
-
 async def keep_alive_job(context: ContextTypes.DEFAULT_TYPE):
     tasks = []
     registered_users: set = context.bot_data[BotData.RegisteredUsers]
     for user in registered_users:
-        profiles = context.application.user_data[user][UserData.Profiles]
-        for profile_id in profiles:
-            tasks.append(keep_alive_task(user, profile_id, profiles))
+        profiles = context.application.user_data[user][UserData.Profiles].values()
+        for profile in profiles:
+            tasks.append(home(profile))
     results = await asyncio.gather(*tasks, return_exceptions=True)
     exceptions = [f'{r}' for r in results if isinstance(r, Exception)]
     if len(exceptions) > 0:
         raise RuntimeError('\n'.join(exceptions))
 
 
-async def update_schedules_image_job(context: ContextTypes.DEFAULT_TYPE):
+async def update_schedule_images_job(context: ContextTypes.DEFAULT_TYPE):
     registered_users: set = context.bot_data[BotData.RegisteredUsers]
     if len(registered_users) == 0:
         logger.error(f'No registered users for stage query.')
@@ -73,12 +57,8 @@ async def update_schedules_image_job(context: ContextTypes.DEFAULT_TYPE):
     profile = profiles[0]
 
     resp = await stage_schedule(profile)
-    schedules = parse_schedules(resp)
-    logger.error(f'get schedules. {schedules}')
-    image = download_image(profile, schedules.coop[0].setting.stage.image_url)
-    cv2.imshow(image, 'test')
-    cv2.waitKey(0)
-    logger.error(f'stage = {resp}')
+    logger.info(f'Got schedules. schedules={resp}')
+    await update_schedule_image(resp, profile, context, force=True)
 
 
 def init_jobs(application: Application):
@@ -99,12 +79,12 @@ def init_jobs(application: Application):
             'misfire_grace_time': None,
         })
     application.job_queue.run_custom(
-        update_schedules_image_job,
+        update_schedule_images_job,
         job_kwargs={
             'trigger': 'cron',
             'hour': '*/2',
             'minute': '0',
-            'second': '0',
+            'second': '5',
             'timezone': datetime.timezone.utc,
             'next_run_time': datetime.datetime.utcnow(),
             'misfire_grace_time': None,

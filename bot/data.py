@@ -2,6 +2,7 @@ import datetime
 import logging
 from dataclasses import dataclass
 
+from telegram import User
 from telegram.ext import ContextTypes, Application
 
 import config
@@ -19,9 +20,11 @@ class BotData:
     WebviewVersion = 'WEBVIEW_VERSION'
     GraphQLRequestMap = 'GRAPHQL_REQUEST_MAP'
     RegisteredUsers = 'REGISTERED_USERS'
-    StageNames = 'STAGE_NAMES'
-    WeaponNames = 'WEAPON_NAMES'
-    RuleNames = 'RULE_NAMES'
+
+    StageImageIDs = "STAGE_IMAGE_IDS"
+    BattleImageIDs = "BATTLE_IMAGE_IDS"
+    JobImageIDs = "JOB_IMAGE_IDS"
+
 
 
 class UserData:
@@ -45,6 +48,7 @@ class Profile:
     country: str = ''
     language: str = ''
     timezone: str = ''
+    tg_user: User = None
 
 
 @dataclass
@@ -75,7 +79,7 @@ class BattleSetting:
 @dataclass
 class JobSetting:
     stage: Stage
-    weapon: tuple[Weapon, Weapon, Weapon, Weapon]
+    weapons: tuple[Weapon, Weapon, Weapon, Weapon]
 
 
 @dataclass
@@ -113,9 +117,9 @@ async def _init_bot_data(context: ContextTypes.DEFAULT_TYPE):
     context.bot_data.setdefault(BotData.WebviewVersion, config.get(config.NINTENDO_WEBVIEW_VERSION))
     context.bot_data.setdefault(BotData.GraphQLRequestMap, config.get(config.NINTENDO_GRAPHQL_REQUEST_MAP))
     context.bot_data.setdefault(BotData.RegisteredUsers, set())
-    context.bot_data.setdefault(BotData.StageNames, dict())
-    context.bot_data.setdefault(BotData.RuleNames, dict())
-    context.bot_data.setdefault(BotData.WeaponNames, dict())
+    context.bot_data.setdefault(BotData.StageImageIDs, dict())
+    context.bot_data.setdefault(BotData.BattleImageIDs, dict())
+    context.bot_data.setdefault(BotData.JobImageIDs, dict())
 
 
 def init_bot_data(application: Application):
