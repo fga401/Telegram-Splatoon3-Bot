@@ -58,7 +58,7 @@ async def update_schedule_images_job(context: ContextTypes.DEFAULT_TYPE):
 
     resp = await stage_schedule(profile)
     logger.info(f'Got schedules. schedules={resp}')
-    await update_schedule_image(resp, profile, context, force=True)
+    await update_schedule_image(resp, profile, context, force=False)
 
 
 def init_jobs(application: Application):

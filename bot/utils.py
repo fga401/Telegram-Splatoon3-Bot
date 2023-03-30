@@ -1,12 +1,13 @@
+import datetime
 import re
 import sys
 from dataclasses import dataclass
 from typing import Tuple, Optional
 
-import cv2
-import numpy as np
-from telegram import Message
+import pytz
+from telegram import Message, User
 from telegram._utils.types import ODVInput
+from telegram.ext import ContextTypes
 from telegram.ext.filters import MessageFilter
 from telegram.request import HTTPXRequest
 from telegram.request._baserequest import BaseRequest
@@ -14,6 +15,7 @@ from telegram.request._requestdata import RequestData
 
 import config
 import utils
+from bot.data import Profile, UserData
 
 
 class WhitelistFilter(MessageFilter):
@@ -75,3 +77,15 @@ class CallbackData:
     @property
     def pattern(self):
         return f'{self.__namespace}_.+'
+
+
+def current_profile(context: ContextTypes.DEFAULT_TYPE, user: User = None) -> Profile:
+    if context.user_data is None:
+        user_data = context.application.user_data[user.id]
+    else:
+        user_data = context.user_data
+    return user_data[UserData.Profiles][user_data[UserData.Current]]
+
+
+def format_time(time: datetime.datetime) -> str:
+    return time.strftime('%m-%d %H:%M')

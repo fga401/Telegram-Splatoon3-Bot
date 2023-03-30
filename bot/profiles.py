@@ -2,6 +2,7 @@ import datetime
 from copy import copy
 from typing import Callable, Union
 
+import pytz
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, filters, Application
 from telegram.ext.filters import MessageFilter
@@ -66,10 +67,11 @@ async def profile_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(profile_keyboard + other_keyboard)
 
     async def __reply():
+        text = _('Here are your profiles ({cnt}/{max}). ').format(cnt=len(profiles), max=config.get(config.APP_MAX_PROFILE)) + _('Choose your new profile.')
         if query is not None:
-            await query.edit_message_text(text=_('Here are your profiles ({}/{}). ').format(len(profiles), config.get(config.APP_MAX_PROFILE)) + _('Choose your new profile.'), reply_markup=reply_markup)
+            await query.edit_message_text(text=text, reply_markup=reply_markup)
         else:
-            await update.message.reply_text(text=_('Here are your profiles ({}/{}). ').format(len(profiles), config.get(config.APP_MAX_PROFILE)) + _('Choose your new profile.'), reply_markup=reply_markup)
+            await update.message.reply_text(text=text, reply_markup=reply_markup)
 
     await __reply()
 
@@ -93,7 +95,7 @@ async def profile_manage(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(profiles) == 0:
         text = _('You don\'t have any profile. Would you like to add one?')
     else:
-        text = _('Here are your profiles ({}/{}). ').format(len(profiles), config.get(config.APP_MAX_PROFILE)) + _('Choose a profile to delete, or add a new profile.')
+        text = _('Here are your profiles ({cnt}/{max}). ').format(cnt=len(profiles), max=config.get(config.APP_MAX_PROFILE)) + _('Choose a profile to delete, or add a new profile.')
     if len(profiles) >= 2:
         other_keyboard[0].append(InlineKeyboardButton(_('« Go Back'), callback_data=ProfileButtonCallback.List))
     else:
@@ -152,10 +154,11 @@ async def profile_add(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
+    text = _('Please input the <b>[Profile Name]</b>.\n')
     if query is not None:
-        message = await query.edit_message_text(text=_('Please send the <b>[Profile Name]</b>.\n') + __message_profile_name_pattern(_), reply_markup=reply_markup)
+        message = await query.edit_message_text(text=text + __message_profile_name_instruction(_), reply_markup=reply_markup)
     else:
-        message = await update.message.reply_text(text=_('Please send the <b>[Profile Name]</b>.\n') + __message_profile_name_pattern(_), reply_markup=reply_markup)
+        message = await update.message.reply_text(text=text + __message_profile_name_instruction(_), reply_markup=reply_markup)
     context.user_data[UserData.MessageID_Name] = message.id
     return ProfileAddingState.Name
 
@@ -163,13 +166,23 @@ async def profile_add(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 async def profile_input_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     profile_name = update.message.text
     profiles: dict[int, Profile] = context.user_data[UserData.Profiles]
-    if profile_name in profiles:
-        await update.message.reply_text(text=_('Profile <b>[{}]</b> already existed. Please choose a new name.\n').format(profile_name) + __message_profile_name_pattern(_))
+    existed_profile_names = {profile.name for profile in profiles.values()}
+    if profile_name in existed_profile_names:
+        await context.bot.delete_message(chat_id=update.message.chat_id, message_id=context.user_data[UserData.MessageID_Name])
+        keyboard = [
+            [
+                InlineKeyboardButton(text=_('« Cancel'), callback_data=ProfileButtonCallback.Cancel),
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        message = await update.message.reply_text(text=_('Profile <b>[{profile_name}]</b> already existed. Please input a new name.\n').format(profile_name=profile_name) + __message_profile_name_instruction(_), reply_markup=reply_markup)
+        context.user_data[UserData.MessageID_Name] = message.id
         return ProfileAddingState.Name
     context.user_data[UserData.Pending].name = profile_name
 
     context.user_data[UserData.Verifier], link = nintendo.login.login_link()
-    await context.application.bot.edit_message_text(chat_id=update.message.chat_id, message_id=context.user_data[UserData.MessageID_Name], text=_('You input the <b>[Profile Name]</b>: <b>[{}]</b>.').format(profile_name))
+    await context.bot.delete_message(chat_id=update.message.chat_id, message_id=context.user_data[UserData.MessageID_Name])
+    await update.message.reply_text(text=_('You input the Profile Name: <b>[{profile_name}]</b>.').format(profile_name=profile_name))
     keyboard = [
         [
             InlineKeyboardButton(text=_('Login'), url=link),
@@ -179,7 +192,7 @@ async def profile_input_name(update: Update, context: ContextTypes.DEFAULT_TYPE)
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    message = await update.message.reply_text(text=_('Please open the page, copy the <b>[link]</b> of <b>[Select this account]</b> and send it here.\n'), reply_markup=reply_markup)
+    message = await update.message.reply_text(text=_('Please open the <b>[Login]</b> page, copy the link of <b>[Select this account]</b> and send it here.\n'), reply_markup=reply_markup)
     context.user_data[UserData.MessageID_Link] = message.id
     return ProfileAddingState.Link
 
@@ -195,7 +208,7 @@ async def profile_input_link(update: Update, context: ContextTypes.DEFAULT_TYPE)
         web_service_token, user_nickname, user_lang, user_country = await nintendo.login.get_gtoken(session_token)
         bullet_token = await nintendo.login.get_bullet(web_service_token, user_lang, user_country)
     except nintendo.utils.NintendoError as e:
-        await update.message.reply_text(text=_('Failed to get your Nintendo token. Please retry.\nerror = {}').format(e))
+        await update.message.reply_text(text=_('Failed to get your Nintendo token. Please retry.\nerror = {error}').format(error=e))
         return ProfileAddingState.Link
     pending_profile: Profile = context.user_data[UserData.Pending]
     pending_profile.account_name = user_nickname
@@ -205,9 +218,10 @@ async def profile_input_link(update: Update, context: ContextTypes.DEFAULT_TYPE)
     pending_profile.country = user_country
 
     await context.application.bot.delete_message(chat_id=message.chat_id, message_id=message.id)
-    await context.application.bot.edit_message_text(chat_id=update.message.chat_id, message_id=context.user_data[UserData.MessageID_Link], text=_('Your account is <b>[{}]</b>.').format(user_nickname))
+    await context.application.bot.delete_message(chat_id=message.chat_id, message_id=context.user_data[UserData.MessageID_Link])
+    await update.message.reply_text(text=_('Your account is <b>[{user_nickname}]</b>.').format(user_nickname=user_nickname))
     keyboard = [
-        [InlineKeyboardButton(l, callback_data=ProfileButtonCallback.Language.encode(l))] for l in locales.available_languages
+        [InlineKeyboardButton(language, callback_data=ProfileButtonCallback.Language.encode(language))] for language in locales.available_languages
     ]
     cancel_keyboard = [
         [
@@ -225,24 +239,44 @@ async def profile_input_language(update: Update, context: ContextTypes.DEFAULT_T
     language = ProfileButtonCallback.Language.decode(query.data)
     context.user_data[UserData.Pending].language = language
 
-    await query.edit_message_text(text=_('You chose preferred <b>[Language]</b>: <b>[{}]</b>').format(language))
+    await query.edit_message_text(text=_('You chose preferred Language: <b>[{language}]</b>').format(language=language))
     keyboard = [
+        [
+            InlineKeyboardButton(text=_('Timezone Identifiers'), url='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones'),
+        ],
         [
             InlineKeyboardButton(text=_('« Cancel'), callback_data=ProfileButtonCallback.Cancel),
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    message = await query.message.reply_text(text=_('Please send the <b>[Timezone]</b>.\n') + __message_profile_timezone_pattern(_), reply_markup=reply_markup)
+    message = await query.message.reply_text(text=_('Please ipnut the <b>[Timezone]</b>. You can find all timezone identifiers in the below link.\n') + __message_profile_timezone_instruction(_), reply_markup=reply_markup)
     context.user_data[UserData.MessageID_Timezone] = message.id
     return ProfileAddingState.Timezone
 
 
 async def profile_input_timezone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     timezone = update.message.text
+    try:
+        pytz.timezone(timezone)
+    except pytz.UnknownTimeZoneError as e:
+        await context.bot.delete_message(chat_id=update.message.chat_id, message_id=context.user_data[UserData.MessageID_Timezone])
+        keyboard = [
+            [
+                InlineKeyboardButton(text=_('Timezone Identifiers'), url='https://en.wikipedia.org/wiki/List_of_tz_database_time_zones'),
+            ],
+            [
+                InlineKeyboardButton(text=_('« Cancel'), callback_data=ProfileButtonCallback.Cancel),
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        message = await update.message.reply_text(text=_('Unknown timezone. Please input a new timezone.\n') + __message_profile_timezone_instruction(_), reply_markup=reply_markup)
+        context.user_data[UserData.MessageID_Timezone] = message.id
+        return ProfileAddingState.Timezone
     context.user_data[UserData.Pending].timezone = timezone
 
     result = __create_profile(context)
-    await context.application.bot.edit_message_text(chat_id=update.message.chat_id, message_id=context.user_data[UserData.MessageID_Timezone], text=_('You input the <b>[Timezone]</b>: <b>[{}]</b>.').format(timezone))
+    await context.application.bot.delete_message(chat_id=update.message.chat_id, message_id=context.user_data[UserData.MessageID_Timezone])
+    await update.message.reply_text(text=_('You input the Timezone: <b>[{timezone}]</b>.').format(timezone=timezone))
     if len(context.user_data[UserData.Profiles]) > 1:
         callback_data = ProfileButtonCallback.List
     else:
@@ -255,7 +289,7 @@ async def profile_input_timezone(update: Update, context: ContextTypes.DEFAULT_T
     reply_markup = InlineKeyboardMarkup(back_keyboard)
     if isinstance(result, int):
         profile = context.user_data[UserData.Profiles][result]
-        await update.message.reply_text(text=_('Profile <b>[{}]</b> was added.').format(profile.name) + __message_profile_detail(_, profile), reply_markup=reply_markup)
+        await update.message.reply_text(text=_('Profile was added.') + __message_profile_detail(_, profile), reply_markup=reply_markup)
     else:
         await update.message.reply_text(text=_('Failed to add profile.\n') + result, reply_markup=reply_markup)
     return ConversationHandler.END
@@ -305,7 +339,7 @@ async def profile_use(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(text=_('Current profile is <b>[{}]</b>.').format(profile.name) + __message_profile_detail(_, profile), reply_markup=reply_markup)
+    await query.edit_message_text(text=_('Current profile is <b>[{profile_name}]</b>.').format(profile_name=profile.name) + __message_profile_detail(_, profile), reply_markup=reply_markup)
 
 
 async def profile_delete(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -327,11 +361,11 @@ async def profile_delete(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     ]
     reply_markup = InlineKeyboardMarkup(back_keyboard)
     if context.user_data[UserData.Current] == -1:
-        await query.edit_message_text(text=_('Profile <b>[{}]</b> was deleted.').format(deleted_profile.name) + __message_profile_detail(_, deleted_profile), reply_markup=reply_markup)
+        await query.edit_message_text(text=_('Profile <b>[{profile_name}]</b> was deleted.').format(profile_name=deleted_profile.name) + __message_profile_detail(_, deleted_profile), reply_markup=reply_markup)
     else:
         next_profile_id = context.user_data[UserData.Current]
-        next_profile = context.user_data[UserData.Profiles][next_profile_id]
-        await query.edit_message_text(text=_('Profile <b>[{}]</b> was deleted.').format(deleted_profile.name) + _('Current profile is <b>[{}]</b>.').format(next_profile) + __message_profile_detail(_, next_profile), reply_markup=reply_markup)
+        next_profile: Profile = context.user_data[UserData.Profiles][next_profile_id]
+        await query.edit_message_text(text=_('Profile <b>[{profile_name}]</b> was deleted.').format(profile_name=deleted_profile.name) + _('Current profile is <b>[{profile_name}]</b>.').format(profile_name=next_profile.name) + __message_profile_detail(_, next_profile), reply_markup=reply_markup)
 
 
 def __show_profile_name(name: str, is_current: bool):
@@ -342,15 +376,35 @@ def __show_profile_name(name: str, is_current: bool):
 
 
 def __message_profile_detail(_: Callable[[str], str], profile: Profile):
-    return _('\n  - Profile Name = <b>[{}]</b>\n  - Account Name = <b>[{}]</b>\n  - Country = <b>[{}]</b>\n  - Language = <b>[{}]</b>\n  - Timezone = <b>[{}]</b>').format(profile.name, profile.account_name, profile.country, profile.language, profile.timezone)
+    return '\n'.join([
+        _('  - Profile Name = <b>[{profile_name}]</b>'),
+        _('  - Account Name = <b>[{account_name}]</b>'),
+        _('  - Country = <b>[{country}]</b>'),
+        _('  - Language = <b>[{language}]</b>'),
+        _('  - Timezone = <b>[{timezone}]</b>'),
+    ]).format(
+        profile_name=profile.name,
+        account_name=profile.account_name,
+        country=profile.country,
+        language=profile.language,
+        timezone=profile.timezone
+    )
 
 
-def __message_profile_name_pattern(_: Callable[[str], str]):
-    return _('  - format: <code>.{1,20}</code>\n  - example: <code>工</code>, <code>MyProfile</code>')
+def __message_profile_name_instruction(_: Callable[[str], str]):
+    return '\n'.join([
+        _('  - format: <code>.{1,20}</code>'),
+        _('  - example: <code>工</code>, <code>MyProfile</code>'),
+    ])
 
 
-def __message_profile_timezone_pattern(_: Callable[[str], str]):
-    return _('  - format: <code>(+|-)\\d+(\\.\\d*)?</code>\n  - example: <code>+8</code>, <code>-5.5</code>')
+def __message_profile_timezone_instruction(_: Callable[[str], str]):
+    return '\n'.join([
+        _('Example:'),
+        _('  - <code>Asia/Shanghai</code>'),
+        _('  - <code>Europe/London</code>'),
+        _('  - <code>Asia/Tokyo</code>'),
+    ])
 
 
 class LoginLinkFilter(MessageFilter):
@@ -386,7 +440,7 @@ handlers = [
                 CallbackQueryHandler(profile_manage, pattern=ProfileButtonCallback.Cancel),
             ],
             ProfileAddingState.Timezone: [
-                MessageHandler(filters=whitelist_filter & filters.Regex(r'^(\+|-)\d+(\.\d*)?$'), callback=profile_input_timezone),
+                MessageHandler(filters=whitelist_filter, callback=profile_input_timezone),
                 CallbackQueryHandler(profile_manage, pattern=ProfileButtonCallback.Cancel),
             ],
             ConversationHandler.TIMEOUT: [

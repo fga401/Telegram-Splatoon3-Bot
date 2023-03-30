@@ -1,6 +1,7 @@
 import datetime
 import logging
 from dataclasses import dataclass
+from enum import Enum
 
 from telegram import User
 from telegram.ext import ContextTypes, Application
@@ -24,7 +25,6 @@ class BotData:
     StageImageIDs = "STAGE_IMAGE_IDS"
     BattleImageIDs = "BATTLE_IMAGE_IDS"
     JobImageIDs = "JOB_IMAGE_IDS"
-
 
 
 class UserData:
@@ -57,6 +57,13 @@ class Rule:
     name: str
 
 
+class Mode(Enum):
+    Regular = 0
+    Challenge = 1
+    Open = 2
+    X = 3
+
+
 @dataclass
 class Stage:
     id: str
@@ -73,6 +80,7 @@ class Weapon:
 @dataclass
 class BattleSetting:
     rule: Rule
+    mode: Mode
     stage: tuple[Stage, Stage]
 
 
