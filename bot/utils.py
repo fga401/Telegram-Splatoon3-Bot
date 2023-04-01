@@ -4,7 +4,6 @@ import sys
 from dataclasses import dataclass
 from typing import Tuple, Optional
 
-import pytz
 from telegram import Message, User
 from telegram._utils.types import ODVInput
 from telegram.ext import ContextTypes
@@ -19,11 +18,16 @@ from bot.data import Profile, UserData
 
 
 class WhitelistFilter(MessageFilter):
+    def __init__(self, whitelist: list[str]):
+        super().__init__()
+        self.whitelist = set(whitelist)
+
     def filter(self, message: Message):
-        return message.from_user.username in config.get(config.BOT_WHITELIST)
+        return message.from_user.username in self.whitelist
 
 
-whitelist_filter = WhitelistFilter()
+whitelist_filter = WhitelistFilter(config.get(config.BOT_WHITELIST))
+admin_filter = WhitelistFilter(config.get(config.BOT_ADMIN))
 
 
 class BackoffRetryRequest(HTTPXRequest):

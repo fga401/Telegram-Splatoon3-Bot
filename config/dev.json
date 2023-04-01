@@ -15,8 +15,8 @@
     "app_version": "2.5.0",
     "s3s_version": "0.3.4",
     "webview_version": "3.0.0-2857bc50",
-    "version_update_interval_in_seconds": 200,
-    "token_update_interval_in_seconds": 20,
+    "version_update_interval_in_seconds": 2000,
+    "token_update_interval_in_seconds": 2000,
     "graphql_query_map": {
       "SupportButton_SupportChallengeMutation": "991bace9e8c52d63084cd1570a97a5b4",
       "CheckinWithQRCodeMutation": "daffd9621680664dbf19d27e87484ac7",

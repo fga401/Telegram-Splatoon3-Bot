@@ -49,7 +49,7 @@ class ScheduleParser:
                 start_time=datetime.datetime.fromisoformat(node['startTime']),
                 end_time=datetime.datetime.fromisoformat(node['endTime']),
             )
-            for node in data['data']['regularSchedules']['nodes']
+            for node in data['data']['regularSchedules']['nodes'] if node['regularMatchSetting'] is not None
         ]
         challenge_schedules = [
             BattleSchedule(
@@ -75,7 +75,7 @@ class ScheduleParser:
                 start_time=datetime.datetime.fromisoformat(node['startTime']),
                 end_time=datetime.datetime.fromisoformat(node['endTime']),
             )
-            for node in data['data']['bankaraSchedules']['nodes']
+            for node in data['data']['bankaraSchedules']['nodes'] if node['bankaraMatchSettings'] is not None
         ]
         open_schedules = [
             BattleSchedule(
@@ -101,7 +101,7 @@ class ScheduleParser:
                 start_time=datetime.datetime.fromisoformat(node['startTime']),
                 end_time=datetime.datetime.fromisoformat(node['endTime']),
             )
-            for node in data['data']['bankaraSchedules']['nodes']
+            for node in data['data']['bankaraSchedules']['nodes'] if node['bankaraMatchSettings'] is not None
         ]
         x_schedules = [
             BattleSchedule(
@@ -127,7 +127,33 @@ class ScheduleParser:
                 start_time=datetime.datetime.fromisoformat(node['startTime']),
                 end_time=datetime.datetime.fromisoformat(node['endTime']),
             )
-            for node in data['data']['xSchedules']['nodes']
+            for node in data['data']['xSchedules']['nodes'] if node['xMatchSetting'] is not None
+        ]
+        fest_schedules = [
+            BattleSchedule(
+                setting=BattleSetting(
+                    rule=Rule(
+                        id=node['festMatchSetting']['vsRule']['rule'],
+                        name=node['festMatchSetting']['vsRule']['name'],
+                    ),
+                    mode=Mode.Fest,
+                    stage=(
+                        Stage(
+                            id=node['festMatchSetting']['vsStages'][0]['id'],
+                            name=node['festMatchSetting']['vsStages'][0]['name'],
+                            image_url=node['festMatchSetting']['vsStages'][0]['image']['url'],
+                        ),
+                        Stage(
+                            id=node['festMatchSetting']['vsStages'][1]['id'],
+                            name=node['festMatchSetting']['vsStages'][1]['name'],
+                            image_url=node['festMatchSetting']['vsStages'][1]['image']['url'],
+                        ),
+                    ),
+                ),
+                start_time=datetime.datetime.fromisoformat(node['startTime']),
+                end_time=datetime.datetime.fromisoformat(node['endTime']),
+            )
+            for node in data['data']['festSchedules']['nodes'] if node['festMatchSetting'] is not None
         ]
         coop_schedules = [
             JobSchedule(
@@ -167,6 +193,7 @@ class ScheduleParser:
             challenge=challenge_schedules,
             open=open_schedules,
             x=x_schedules,
+            fest=fest_schedules,
             coop=coop_schedules,
         )
 
@@ -257,7 +284,7 @@ async def update_schedule_image(data: str, profile: Profile, context: ContextTyp
 
     schedules = ScheduleParser.schedules(data)
     # distinct stage
-    battle_stages: list[tuple[Stage, Stage]] = list({(b.setting.stage[0].id, b.setting.stage[1].id): b.setting.stage for b in schedules.regular + schedules.challenge + schedules.open + schedules.x}.values())
+    battle_stages: list[tuple[Stage, Stage]] = list({(b.setting.stage[0].id, b.setting.stage[1].id): b.setting.stage for b in schedules.regular + schedules.challenge + schedules.open + schedules.x + schedules.fest}.values())
     upload_battle_tasks = []
     for battle_stage in battle_stages:
         if battle_key(battle_stage) not in battle_cache:
@@ -278,18 +305,17 @@ async def update_schedule_image(data: str, profile: Profile, context: ContextTyp
     logger.info(f'Updated schedules images. number = {len(results) - error_cnt}')
 
 
-class QueryFilter:
+class BattleQueryFilter:
     regexp = r'([rcox]+( [talgc]+)?)?( |$)(\d{1,2}( \d{0,2})?)?'
     __compiled = re.compile(regexp)
 
     @staticmethod
     def validate(args: list[str]) -> bool:
         text = ' '.join(args)
-        return QueryFilter.__compiled.match(text) is not None
+        return BattleQueryFilter.__compiled.match(text) is not None
 
     @staticmethod
     def filter(args: list[str], schedules: Schedules, tz: datetime.tzinfo) -> Schedules:
-
         mode = set()
         rule = set()
         lowerbound = datetime.datetime.now()
@@ -303,7 +329,7 @@ class QueryFilter:
                 digit.append(int(arg))
 
         if len(alpha) == 0:
-            alpha.append('rcox')  # default mode
+            alpha.append('rcoxf')  # default mode
         if len(alpha) == 1:
             alpha.append('talgc')  # default rule
         if 'r' in alpha[0]:
@@ -314,6 +340,8 @@ class QueryFilter:
             mode.add(Mode.Open)
         if 'x' in alpha[0]:
             mode.add(Mode.X)
+        if 'f' in alpha[0]:
+            mode.add(Mode.Fest)
 
         if 't' in alpha[1]:
             rule.add('TURF_WAR')
@@ -355,7 +383,7 @@ class QueryFilter:
         schedules.challenge = list(filter(_filter_schedule, schedules.challenge))
         schedules.open = list(filter(_filter_schedule, schedules.open))
         schedules.x = list(filter(_filter_schedule, schedules.x))
-
+        schedules.fest = list(filter(_filter_schedule, schedules.fest))
         return schedules
 
 
@@ -372,12 +400,15 @@ async def output_battle_schedule(schedule: BattleSchedule, update: Update, conte
         mode_text = _('Anarchy Battle (Open)')
     elif schedule.setting.mode == Mode.X:
         mode_text = _('X Battle')
-
+    elif schedule.setting.mode == Mode.Fest:
+        mode_text = _('Splatfest Battle')
     text = '\n'.join([
         _('Time: <code>{start_time}</code> ~ <code>{end_time}</code>'),
-        _('Mode: {mode}'),
-        _('Stage:\n  - {stage_1}\n  - {stage_2}'),
-        _('Rule: {rule}'),
+        _('Mode: <code>{mode}</code>'),
+        _('Stage:'),
+        _('  - <code>{stage_1}</code>'),
+        _('  - <code>{stage_2}</code>'),
+        _('Rule: <code>{rule}</code>'),
     ]).format(
         start_time=format_time(schedule.start_time.astimezone(pytz.timezone(profile.timezone))),
         end_time=format_time(schedule.end_time.astimezone(pytz.timezone(profile.timezone))),
@@ -389,41 +420,139 @@ async def output_battle_schedule(schedule: BattleSchedule, update: Update, conte
     await update.message.reply_photo(photo=file_id, caption=text)
 
 
-async def schedule_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def battle_schedule_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     profile = current_profile(context)
+    args = context.args
+    if not BattleQueryFilter.validate(args):
+        await update.message.reply_text(text=_('Invalid query arguments.\n\n') + __message_battle_schedule_query_instruction(_))
+        return
     resp = await stage_schedule(profile)
     schedules = ScheduleParser.schedules(resp)
-
-    args = context.args
-    if not QueryFilter.validate(args):
-        # TODO validate
-        pass
-    filtered_schedules = QueryFilter.filter(args, schedules, pytz.timezone(profile.timezone))
-    ordered_schedules = sorted(filtered_schedules.x + filtered_schedules.open + filtered_schedules.challenge + filtered_schedules.regular, key=lambda x: x.end_time, reverse=True)
+    filtered_schedules = BattleQueryFilter.filter(args, schedules, pytz.timezone(profile.timezone))
+    ordered_schedules = sorted(filtered_schedules.x + filtered_schedules.open + filtered_schedules.challenge + filtered_schedules.regular + filtered_schedules.fest, key=lambda x: x.end_time, reverse=True)
+    if len(ordered_schedules) == 0:
+        await update.message.reply_text(text=_("No matching schedules after filtering."))
     for schedule in ordered_schedules:
         await output_battle_schedule(schedule, update, context)
 
-# Parameters: [MODE] [RULE] [TIME]
-# [RULE]
-#   - r: Regular Battle
-#   - c: Anarchy Battle (Series)
-#   - o: Anarchy Battle (Open)
-#   - x: X Battle
-# [RULE]
-#   - t: {}
-#   - a: {}
-#   - l: {}
-#   - g: {}
-#   - c: {}
-# [TIME]
-#   - N: Next N Schedules
-#   - X Y: Schedules between X and Y
-# Example:
-#   - (None arguments): Default arguments. Next 2 schedules for all modes.
-#   - o 20 24: Anarchy Battle (Open) schedules between 20:00 and 24:00
-#   - x a 2: X Battle schedules with {} in next 4 hours if existing.
-def __message_schedule_query_instruction(_: Callable[[str], str]):
-    return _('  - format: <code>{regexp}</code>\n  - example: <code>o 20 24</code>, <code>MyProfile</code>').format(regexp=QueryFilter.regexp)
+
+def __message_battle_schedule_query_instruction(_: Callable[[str], str]):
+    return '\n'.join([
+        _('Parameters: [MODE] [RULE] [TIME]'),
+        _('[RULE]'),
+        _('  - r: {regular}'),
+        _('  - c: {challenge}'),
+        _('  - o: {open}'),
+        _('  - x: {x}'),
+        _('  - fest: {fest}'),
+        _('[RULE]'),
+        _('  - t: {turf_war}'),
+        _('  - a: {area}'),
+        _('  - l: {lift}'),
+        _('  - g: {goal}'),
+        _('  - c: {clam}'),
+        _('[TIME]'),
+        _('  - N: Next N Schedules'),
+        _('  - X Y: Schedules between X and Y'),
+        _('Example:'),
+        _('  - /schedules: Default arguments. Next 2 schedules for all modes.'),
+        _('  - /schedules o 20 24: {open} schedules between 20:00 and 24:00.'),
+        _('  - /schedules x a 2: {x} schedules with {area} in next 4 hours if existing.'),
+    ]).format(
+        regular=_('Regular Battle'),
+        challenge=_('Anarchy Battle (Series)'),
+        open=_('Anarchy Battle (Open)'),
+        x=_('X Battle'),
+        fest=_('Splatfest Battle'),
+        turf_war=_('TURF_WAR'),
+        area=_('AREA'),
+        lift=_('LIFT'),
+        goal=_('GOAL'),
+        clam=_('CLAM'),
+    )
+
+
+class JobQueryFilter:
+    regexp = r'\d?'
+    __compiled = re.compile(regexp)
+
+    @staticmethod
+    def validate(args: list[str]) -> bool:
+        text = ' '.join(args)
+        return JobQueryFilter.__compiled.match(text) is not None
+
+    @staticmethod
+    def filter(args: list[str], schedules: Schedules) -> Schedules:
+        N = 2
+        if len(args) > 0 and int(args[0]) > 0:
+            N = int(args[0])
+        schedules.coop = schedules.coop[:N]
+        return schedules
+
+
+async def output_job_schedule(schedule: JobSchedule, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    profile = current_profile(context)
+    job_cache: dict[str, str] = context.bot_data[BotData.JobImageIDs]
+    file_id = job_cache[job_key(schedule)]
+    if (schedule.start_time - datetime.datetime.now().astimezone(pytz.UTC)).total_seconds() >= 0:
+        second = int((schedule.start_time - datetime.datetime.now().astimezone(pytz.UTC)).total_seconds())
+        time_text = _('Job will start in {time}.')
+    else:
+        second = int((schedule.end_time - datetime.datetime.now().astimezone(pytz.UTC)).total_seconds())
+        time_text = _('Job will be over in {time}.')
+    hour = second // 60 // 60
+    minute = second // 60 % 60
+    if hour == 0:
+        time = _('{minute}m').format(minute=minute)
+    else:
+        time = _('{hour}h {minute}m').format(hour=hour, minute=minute)
+    text = '\n'.join([
+        _('Time: <code>{start_time}</code> ~ <code>{end_time}</code>'),
+        _('Stage: <code>{stage}</code>'),
+        _('Weapon:'),
+        _('  - <code>{weapon_1}</code>'),
+        _('  - <code>{weapon_2}</code>'),
+        _('  - <code>{weapon_3}</code>'),
+        _('  - <code>{weapon_4}</code>'),
+        _('{remaining_text}')
+    ]).format(
+        start_time=format_time(schedule.start_time.astimezone(pytz.timezone(profile.timezone))),
+        end_time=format_time(schedule.end_time.astimezone(pytz.timezone(profile.timezone))),
+        stage=schedule.setting.stage.name,
+        weapon_1=schedule.setting.weapons[0].name,
+        weapon_2=schedule.setting.weapons[1].name,
+        weapon_3=schedule.setting.weapons[2].name,
+        weapon_4=schedule.setting.weapons[3].name,
+        remaining_text=time_text.format(time=time)
+    )
+    await update.message.reply_photo(photo=file_id, caption=text)
+
+
+async def job_schedule_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    profile = current_profile(context)
+    args = context.args
+    if not JobQueryFilter.validate(args):
+        await update.message.reply_text(text=_('Invalid query arguments.\n\n') + __message_job_schedule_query_instruction(_))
+        return
+    resp = await stage_schedule(profile)
+    schedules = ScheduleParser.schedules(resp)
+    filtered_schedules = JobQueryFilter.filter(args, schedules)
+    ordered_schedules = sorted(filtered_schedules.coop, key=lambda x: x.end_time, reverse=True)
+    if len(ordered_schedules) == 0:
+        await update.message.reply_text(text=_("No matching schedules after filtering."))
+    for schedule in ordered_schedules:
+        await output_job_schedule(schedule, update, context)
+
+
+def __message_job_schedule_query_instruction(_: Callable[[str], str]):
+    return '\n'.join([
+        _('Parameters: [Next]'),
+        _('[Next]'),
+        _('  - N: Next N Schedules'),
+        _('Example:'),
+        _('  - /schedules: Default arguments. Next 2 schedules.'),
+        _('  - /schedules 3: Next 3 schedules.'),
+    ])
 
 
 def init_schedules(application: Application):
@@ -431,6 +560,6 @@ def init_schedules(application: Application):
 
 
 handlers = [
-    CommandHandler('schedules', schedule_query, filters=whitelist_filter),
-    CommandHandler('coop_schedules', schedule_query, filters=whitelist_filter),
+    CommandHandler('schedules', battle_schedule_query, filters=whitelist_filter),
+    CommandHandler('coop_schedules', job_schedule_query, filters=whitelist_filter),
 ]

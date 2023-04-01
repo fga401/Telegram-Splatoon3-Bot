@@ -7,7 +7,7 @@ import telegram.request._httpxrequest
 from telegram.ext import Defaults, ApplicationBuilder, PicklePersistence, PersistenceInput, AIORateLimiter
 
 import config
-from bot import profiles, start, jobs, data, nintendo, schedules
+from bot import profiles, start, jobs, data, nintendo, schedules, admin
 from bot.data import Consts
 from bot.utils import BackoffRetryRequest
 
@@ -39,8 +39,11 @@ def run():
     application.add_handlers(start.handlers)
     application.add_handlers(nintendo.handlers)
 
-    profiles.init_profile(application)
     data.init_bot_data(application)
+
+    profiles.init_profile(application)
+    admin.init_admin(application)
+
     jobs.init_jobs(application)
     schedules.init_schedules(application)
 

@@ -62,6 +62,7 @@ class Mode(Enum):
     Challenge = 1
     Open = 2
     X = 3
+    Fest = 4
 
 
 @dataclass
@@ -110,11 +111,11 @@ class JobSchedule(Schedule):
 class Schedules:
     # TODO: bigRun
     # TODO: teamContest
-    # TODO: fest
     regular: list[BattleSchedule]
     challenge: list[BattleSchedule]
     open: list[BattleSchedule]
     x: list[BattleSchedule]
+    fest: list[BattleSchedule]
     coop: list[JobSchedule]
 
 
