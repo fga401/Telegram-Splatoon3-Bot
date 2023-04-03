@@ -11,9 +11,10 @@ NINTENDO_APP_VERSION = 'nintendo.app_version'
 NINTENDO_S3S_VERSION = 'nintendo.s3s_version'
 NINTENDO_WEBVIEW_VERSION = 'nintendo.webview_version'
 NINTENDO_GRAPHQL_REQUEST_MAP = 'nintendo.graphql_query_map'
-NINTENDO_VERSION_UPDATE_INTERVAL = 'nintendo.version_update_interval_in_seconds'
 
+NINTENDO_VERSION_UPDATE_INTERVAL = 'nintendo.version_update_interval_in_seconds'
 NINTENDO_TOKEN_UPDATE_INTERVAL = 'nintendo.token_update_interval_in_seconds'
+NINTENDO_MONITOR_INTERVAL = 'nintendo.monitor_interval_in_seconds'
 
 NINTENDO_PROXY_ENABLED = 'nintendo.proxy.enabled'
 NINTENDO_PROXY_HTTP = 'nintendo.proxy.http'

@@ -4,7 +4,7 @@ import sys
 from dataclasses import dataclass
 from typing import Tuple, Optional
 
-from telegram import Message, User
+from telegram import Message
 from telegram._utils.types import ODVInput
 from telegram.ext import ContextTypes
 from telegram.ext.filters import MessageFilter
@@ -83,13 +83,17 @@ class CallbackData:
         return f'{self.__namespace}_.+'
 
 
-def current_profile(context: ContextTypes.DEFAULT_TYPE, user: User = None) -> Profile:
+def current_profile(context: ContextTypes.DEFAULT_TYPE, user_id: str = None) -> Profile:
     if context.user_data is None:
-        user_data = context.application.user_data[user.id]
+        user_data = context.application.user_data[user_id]
     else:
         user_data = context.user_data
     return user_data[UserData.Profiles][user_data[UserData.Current]]
 
 
-def format_time(time: datetime.datetime) -> str:
+def format_schedule_time(time: datetime.datetime) -> str:
     return time.strftime('%m-%d %H:%M')
+
+
+def format_detail_time(time: datetime.datetime) -> str:
+    return time.strftime('%Y-%m-%d %H:%M:%S')

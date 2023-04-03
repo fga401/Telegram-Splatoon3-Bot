@@ -25,6 +25,14 @@ accepted_languages = {
 class QueryKey:
     HomeQuery = 'HomeQuery'
     StageScheduleQuery = 'StageScheduleQuery'
+    LatestBattleHistoriesQuery = 'LatestBattleHistoriesQuery'
+    VsHistoryDetailQuery = 'VsHistoryDetailQuery'
+    CoopHistoryQuery = 'CoopHistoryQuery'
+    CoopHistoryDetailQuery = 'CoopHistoryDetailQuery'
+    PrivateBattleHistoriesQuery = 'PrivateBattleHistoriesQuery'
+    RegularBattleHistoriesQuery = 'RegularBattleHistoriesQuery'
+    BankaraBattleHistoriesQuery = 'BankaraBattleHistoriesQuery'
+    XBattleHistoriesQuery = 'XBattleHistoriesQuery'
 
 
 graphql_query_map: dict[str, str] = config.get(config.NINTENDO_GRAPHQL_REQUEST_MAP)

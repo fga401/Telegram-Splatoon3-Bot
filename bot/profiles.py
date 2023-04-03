@@ -56,7 +56,7 @@ async def profile_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await profile_manage(update, context)
         return
     profile_keyboard = [
-        [InlineKeyboardButton(__show_profile_name(p.name, p.id == current_profile), callback_data=ProfileButtonCallback.Use.encode(str(p.id)))] for p in sorted(profiles.values(), key=lambda x: x.id)
+        [InlineKeyboardButton(_keyboard_profile_name(p.name, p.id == current_profile), callback_data=ProfileButtonCallback.Use.encode(str(p.id)))] for p in sorted(profiles.values(), key=lambda x: x.id)
     ]
     other_keyboard = [
         [
@@ -89,7 +89,7 @@ async def profile_manage(update: Update, context: ContextTypes.DEFAULT_TYPE):
     current_profile = context.user_data[UserData.Current]
     profiles: dict[int, Profile] = context.user_data[UserData.Profiles]
     profile_keyboard = [
-        [InlineKeyboardButton(__show_profile_name(p.name, p.id == current_profile), callback_data=ProfileButtonCallback.Detail.encode(str(p.id)))] for p in sorted(profiles.values(), key=lambda x: x.id)
+        [InlineKeyboardButton(_keyboard_profile_name(p.name, p.id == current_profile), callback_data=ProfileButtonCallback.Detail.encode(str(p.id)))] for p in sorted(profiles.values(), key=lambda x: x.id)
     ]
     other_keyboard = [[]]
     if len(profiles) == 0:
@@ -126,7 +126,7 @@ async def profile_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(text=_('Are you sure to delete this profile?') + __message_profile_detail(_, profile), reply_markup=reply_markup)
+    await query.edit_message_text(text=_('Are you sure to delete this profile?') + _message_profile_detail(_, profile), reply_markup=reply_markup)
 
 
 async def profile_add(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -156,9 +156,9 @@ async def profile_add(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     reply_markup = InlineKeyboardMarkup(keyboard)
     text = _('Please input the <b>[Profile Name]</b>.\n')
     if query is not None:
-        message = await query.edit_message_text(text=text + __message_profile_name_instruction(_), reply_markup=reply_markup)
+        message = await query.edit_message_text(text=text + _message_profile_name_instruction(_), reply_markup=reply_markup)
     else:
-        message = await update.message.reply_text(text=text + __message_profile_name_instruction(_), reply_markup=reply_markup)
+        message = await update.message.reply_text(text=text + _message_profile_name_instruction(_), reply_markup=reply_markup)
     context.user_data[UserData.MessageID_Name] = message.id
     return ProfileAddingState.Name
 
@@ -175,7 +175,7 @@ async def profile_input_name(update: Update, context: ContextTypes.DEFAULT_TYPE)
             ]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        message = await update.message.reply_text(text=_('Profile <code>{profile_name}</code> already existed. Please input a new name.\n').format(profile_name=profile_name) + __message_profile_name_instruction(_), reply_markup=reply_markup)
+        message = await update.message.reply_text(text=_('Profile <code>{profile_name}</code> already existed. Please input a new name.\n').format(profile_name=profile_name) + _message_profile_name_instruction(_), reply_markup=reply_markup)
         context.user_data[UserData.MessageID_Name] = message.id
         return ProfileAddingState.Name
     context.user_data[UserData.Pending].name = profile_name
@@ -249,7 +249,7 @@ async def profile_input_language(update: Update, context: ContextTypes.DEFAULT_T
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    message = await query.message.reply_text(text=_('Please ipnut the <b>[Timezone]</b>. You can find all timezone identifiers in the below link.\n') + __message_profile_timezone_instruction(_), reply_markup=reply_markup)
+    message = await query.message.reply_text(text=_('Please ipnut the <b>[Timezone]</b>. You can find all timezone identifiers in the below link.\n') + _message_profile_timezone_instruction(_), reply_markup=reply_markup)
     context.user_data[UserData.MessageID_Timezone] = message.id
     return ProfileAddingState.Timezone
 
@@ -269,7 +269,7 @@ async def profile_input_timezone(update: Update, context: ContextTypes.DEFAULT_T
             ]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        message = await update.message.reply_text(text=_('Unknown timezone. Please input a new timezone.\n') + __message_profile_timezone_instruction(_), reply_markup=reply_markup)
+        message = await update.message.reply_text(text=_('Unknown timezone. Please input a new timezone.\n') + _message_profile_timezone_instruction(_), reply_markup=reply_markup)
         context.user_data[UserData.MessageID_Timezone] = message.id
         return ProfileAddingState.Timezone
     context.user_data[UserData.Pending].timezone = timezone
@@ -289,7 +289,7 @@ async def profile_input_timezone(update: Update, context: ContextTypes.DEFAULT_T
     reply_markup = InlineKeyboardMarkup(back_keyboard)
     if isinstance(result, int):
         profile = context.user_data[UserData.Profiles][result]
-        await update.message.reply_text(text=_('Profile was added.') + __message_profile_detail(_, profile), reply_markup=reply_markup)
+        await update.message.reply_text(text=_('Profile was added.') + _message_profile_detail(_, profile), reply_markup=reply_markup)
     else:
         await update.message.reply_text(text=_('Failed to add profile. {error}').format(error=result), reply_markup=reply_markup)
     return ConversationHandler.END
@@ -339,7 +339,7 @@ async def profile_use(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(text=_('Current profile is <code>{profile_name}</code>.').format(profile_name=profile.name) + __message_profile_detail(_, profile), reply_markup=reply_markup)
+    await query.edit_message_text(text=_('Current profile is <code>{profile_name}</code>.').format(profile_name=profile.name) + _message_profile_detail(_, profile), reply_markup=reply_markup)
 
 
 async def profile_delete(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -362,21 +362,21 @@ async def profile_delete(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     reply_markup = InlineKeyboardMarkup(back_keyboard)
     delete_text = _('Profile <code>{profile_name}</code> was deleted.').format(profile_name=deleted_profile.name)
     if context.user_data[UserData.Current] == -1:
-        await query.edit_message_text(text=delete_text + __message_profile_detail(_, deleted_profile), reply_markup=reply_markup)
+        await query.edit_message_text(text=delete_text + _message_profile_detail(_, deleted_profile), reply_markup=reply_markup)
     else:
         next_profile_id = context.user_data[UserData.Current]
         next_profile: Profile = context.user_data[UserData.Profiles][next_profile_id]
-        await query.edit_message_text(text=delete_text + _(' Current profile is <code>{profile_name}</code>.').format(profile_name=next_profile.name) + __message_profile_detail(_, next_profile), reply_markup=reply_markup)
+        await query.edit_message_text(text=delete_text + _(' Current profile is <code>{profile_name}</code>.').format(profile_name=next_profile.name) + _message_profile_detail(_, next_profile), reply_markup=reply_markup)
 
 
-def __show_profile_name(name: str, is_current: bool):
+def _keyboard_profile_name(name: str, is_current: bool):
     if is_current:
         return f'* {name}'
     else:
         return f'  {name}'
 
 
-def __message_profile_detail(_: Callable[[str], str], profile: Profile):
+def _message_profile_detail(_: Callable[[str], str], profile: Profile):
     return '\n'.join([
         '',
         _('  - Profile Name = <code>{profile_name}</code>'),
@@ -393,14 +393,14 @@ def __message_profile_detail(_: Callable[[str], str], profile: Profile):
     )
 
 
-def __message_profile_name_instruction(_: Callable[[str], str]):
+def _message_profile_name_instruction(_: Callable[[str], str]):
     return '\n'.join([
         _('  - format: <code>.{1,20}</code>'),
         _('  - example: <code>工</code>, <code>MyProfile</code>'),
     ])
 
 
-def __message_profile_timezone_instruction(_: Callable[[str], str]):
+def _message_profile_timezone_instruction(_: Callable[[str], str]):
     return '\n'.join([
         _('Example:'),
         _('  - <code>Asia/Shanghai</code>'),

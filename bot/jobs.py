@@ -2,18 +2,58 @@ import asyncio
 import datetime
 import logging
 
-import cv2
-from telegram.ext import ContextTypes, Application
+from telegram import Update
+from telegram.ext import ContextTypes, Application, CommandHandler
 
 import config
 import nintendo.login
 import nintendo.query
-from bot.data import BotData, UserData, Profile
-from bot.nintendo import update_token, home, stage_schedule, download_image
-from bot.schedules import ScheduleParser, update_schedule_image
-from nintendo.utils import ExpiredTokenError
+from bot.battles import _message_battle_detail
+from bot.data import BotData, UserData, BattleParser
+from bot.nintendo import home, stage_schedule, battles, battle_detail, jobs
+from bot.schedules import update_schedule_image
+from bot.utils import current_profile
+from locales import _
 
 logger = logging.getLogger('bot.job')
+
+
+async def monitor_battle(context: ContextTypes.DEFAULT_TYPE):
+    user_data = context.user_data[context.job.user_id]
+    profile = current_profile(context, user_id=context.job.user_id)
+
+    resp = await battles(profile)
+    battle_histories = BattleParser.battle_histories(resp)
+    battle_ids = [b.id for b in battle_histories]
+    last_battle_id = user_data[UserData.LastBattle]
+    try:
+        cnt = battle_ids.index(last_battle_id)
+    except ValueError:
+        cnt = len(battle_ids)
+    for battle_id in battle_ids[:cnt:-1]:
+        resp = await battle_detail(profile, battle_id)
+        detail = BattleParser.battle_detail(resp)
+        text = _message_battle_detail(_, detail)
+        context.bot.send_message(chat_id=context.job.chat_id, text=text)
+    if len(battle_ids) > 0:
+        user_data[UserData.LastBattle] = battle_ids[0]
+
+    # TODO: Salmon Run
+    resp = await jobs(profile)
+
+
+async def monitor_battle_job(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.job_queue.run_custom(
+        monitor_battle,
+        job_kwargs={
+            'trigger': 'interval',
+            'seconds': config.get(config.NINTENDO_MONITOR_INTERVAL),
+            'next_run_time': datetime.datetime.utcnow(),
+            'misfire_grace_time': None,
+        },
+        chat_id=update.message.chat_id,
+        user_id=update.message.from_user.id,
+    )
 
 
 async def update_nso_version_job(context: ContextTypes.DEFAULT_TYPE):
@@ -69,7 +109,8 @@ def init_jobs(application: Application):
             'seconds': config.get(config.NINTENDO_VERSION_UPDATE_INTERVAL),
             'next_run_time': datetime.datetime.utcnow(),
             'misfire_grace_time': None,
-        })
+        }
+    )
     application.job_queue.run_custom(
         keep_alive_job,
         job_kwargs={
@@ -77,7 +118,8 @@ def init_jobs(application: Application):
             'seconds': config.get(config.NINTENDO_TOKEN_UPDATE_INTERVAL),
             'next_run_time': datetime.datetime.utcnow(),
             'misfire_grace_time': None,
-        })
+        }
+    )
     application.job_queue.run_custom(
         update_schedule_images_job,
         job_kwargs={
@@ -88,4 +130,11 @@ def init_jobs(application: Application):
             'timezone': datetime.timezone.utc,
             'next_run_time': datetime.datetime.utcnow(),
             'misfire_grace_time': None,
-        })
+        }
+    )
+    application.add_handlers(handlers)
+
+
+handlers = [
+    CommandHandler('monitor', monitor_battle_job)
+]

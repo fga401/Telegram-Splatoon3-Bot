@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import json
 import logging
 import re
 from typing import Callable
@@ -12,202 +11,12 @@ from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler, Application
 
 import config
-from bot.data import Schedules, BattleSchedule, BattleSetting, JobSchedule, JobSetting, Rule, Stage, Weapon, BotData, Profile, Mode
+from bot.data import Schedules, BattleSchedule, JobSchedule, Stage, BotData, Profile, ModeEnum, ScheduleParser, RuleEnum
 from bot.nintendo import download_image, stage_schedule
-from bot.utils import whitelist_filter, current_profile, format_time
+from bot.utils import whitelist_filter, current_profile, format_schedule_time
 from locales import _
 
 logger = logging.getLogger('bot.schedules')
-
-
-class ScheduleParser:
-
-    @staticmethod
-    def schedules(data: str) -> Schedules:
-        data = json.loads(data)
-        regular_schedules = [
-            BattleSchedule(
-                setting=BattleSetting(
-                    rule=Rule(
-                        id=node['regularMatchSetting']['vsRule']['rule'],
-                        name=node['regularMatchSetting']['vsRule']['name'],
-                    ),
-                    mode=Mode.Regular,
-                    stage=(
-                        Stage(
-                            id=node['regularMatchSetting']['vsStages'][0]['id'],
-                            name=node['regularMatchSetting']['vsStages'][0]['name'],
-                            image_url=node['regularMatchSetting']['vsStages'][0]['image']['url'],
-                        ),
-                        Stage(
-                            id=node['regularMatchSetting']['vsStages'][1]['id'],
-                            name=node['regularMatchSetting']['vsStages'][1]['name'],
-                            image_url=node['regularMatchSetting']['vsStages'][1]['image']['url'],
-                        ),
-                    )
-                ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
-            )
-            for node in data['data']['regularSchedules']['nodes'] if node['regularMatchSetting'] is not None
-        ]
-        challenge_schedules = [
-            BattleSchedule(
-                setting=BattleSetting(
-                    rule=Rule(
-                        id=node['bankaraMatchSettings'][0]['vsRule']['rule'],
-                        name=node['bankaraMatchSettings'][0]['vsRule']['name'],
-                    ),
-                    mode=Mode.Challenge,
-                    stage=(
-                        Stage(
-                            id=node['bankaraMatchSettings'][0]['vsStages'][0]['id'],
-                            name=node['bankaraMatchSettings'][0]['vsStages'][0]['name'],
-                            image_url=node['bankaraMatchSettings'][0]['vsStages'][0]['image']['url'],
-                        ),
-                        Stage(
-                            id=node['bankaraMatchSettings'][0]['vsStages'][1]['id'],
-                            name=node['bankaraMatchSettings'][0]['vsStages'][1]['name'],
-                            image_url=node['bankaraMatchSettings'][0]['vsStages'][1]['image']['url'],
-                        ),
-                    )
-                ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
-            )
-            for node in data['data']['bankaraSchedules']['nodes'] if node['bankaraMatchSettings'] is not None
-        ]
-        open_schedules = [
-            BattleSchedule(
-                setting=BattleSetting(
-                    rule=Rule(
-                        id=node['bankaraMatchSettings'][1]['vsRule']['rule'],
-                        name=node['bankaraMatchSettings'][1]['vsRule']['name'],
-                    ),
-                    mode=Mode.Open,
-                    stage=(
-                        Stage(
-                            id=node['bankaraMatchSettings'][1]['vsStages'][0]['id'],
-                            name=node['bankaraMatchSettings'][1]['vsStages'][0]['name'],
-                            image_url=node['bankaraMatchSettings'][1]['vsStages'][0]['image']['url'],
-                        ),
-                        Stage(
-                            id=node['bankaraMatchSettings'][1]['vsStages'][1]['id'],
-                            name=node['bankaraMatchSettings'][1]['vsStages'][1]['name'],
-                            image_url=node['bankaraMatchSettings'][1]['vsStages'][1]['image']['url'],
-                        ),
-                    )
-                ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
-            )
-            for node in data['data']['bankaraSchedules']['nodes'] if node['bankaraMatchSettings'] is not None
-        ]
-        x_schedules = [
-            BattleSchedule(
-                setting=BattleSetting(
-                    rule=Rule(
-                        id=node['xMatchSetting']['vsRule']['rule'],
-                        name=node['xMatchSetting']['vsRule']['name'],
-                    ),
-                    mode=Mode.X,
-                    stage=(
-                        Stage(
-                            id=node['xMatchSetting']['vsStages'][0]['id'],
-                            name=node['xMatchSetting']['vsStages'][0]['name'],
-                            image_url=node['xMatchSetting']['vsStages'][0]['image']['url'],
-                        ),
-                        Stage(
-                            id=node['xMatchSetting']['vsStages'][1]['id'],
-                            name=node['xMatchSetting']['vsStages'][1]['name'],
-                            image_url=node['xMatchSetting']['vsStages'][1]['image']['url'],
-                        ),
-                    ),
-                ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
-            )
-            for node in data['data']['xSchedules']['nodes'] if node['xMatchSetting'] is not None
-        ]
-        fest_schedules = [
-            BattleSchedule(
-                setting=BattleSetting(
-                    rule=Rule(
-                        id=node['festMatchSetting']['vsRule']['rule'],
-                        name=node['festMatchSetting']['vsRule']['name'],
-                    ),
-                    mode=Mode.Fest,
-                    stage=(
-                        Stage(
-                            id=node['festMatchSetting']['vsStages'][0]['id'],
-                            name=node['festMatchSetting']['vsStages'][0]['name'],
-                            image_url=node['festMatchSetting']['vsStages'][0]['image']['url'],
-                        ),
-                        Stage(
-                            id=node['festMatchSetting']['vsStages'][1]['id'],
-                            name=node['festMatchSetting']['vsStages'][1]['name'],
-                            image_url=node['festMatchSetting']['vsStages'][1]['image']['url'],
-                        ),
-                    ),
-                ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
-            )
-            for node in data['data']['festSchedules']['nodes'] if node['festMatchSetting'] is not None
-        ]
-        coop_schedules = [
-            JobSchedule(
-                setting=JobSetting(
-                    stage=Stage(
-                        id=node['setting']['coopStage']['id'],
-                        name=node['setting']['coopStage']['name'],
-                        image_url=node['setting']['coopStage']['thumbnailImage']['url'],
-                    ),
-                    weapons=(
-                        Weapon(
-                            name=node['setting']['weapons'][0]['name'],
-                            image_url=node['setting']['weapons'][0]['image']['url'],
-                        ),
-                        Weapon(
-                            name=node['setting']['weapons'][1]['name'],
-                            image_url=node['setting']['weapons'][1]['image']['url'],
-                        ),
-                        Weapon(
-                            name=node['setting']['weapons'][2]['name'],
-                            image_url=node['setting']['weapons'][2]['image']['url'],
-                        ),
-                        Weapon(
-                            name=node['setting']['weapons'][3]['name'],
-                            image_url=node['setting']['weapons'][3]['image']['url'],
-                        ),
-                    )
-                ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
-            )
-            for node in data['data']['coopGroupingSchedule']['regularSchedules']['nodes']
-        ]
-
-        return Schedules(
-            regular=regular_schedules,
-            challenge=challenge_schedules,
-            open=open_schedules,
-            x=x_schedules,
-            fest=fest_schedules,
-            coop=coop_schedules,
-        )
-
-    @staticmethod
-    def stages(data: str) -> list[Stage]:
-        data = json.loads(data)
-        return [
-            Stage(
-                id=node['id'],
-                name=node['name'],
-                image_url=node['originalImage']['url']
-            )
-            for node in data['data']['vsStages']['nodes']
-        ]
 
 
 def bytes_to_image(data: bytes) -> np.ndarray:
@@ -333,26 +142,26 @@ class BattleQueryFilter:
         if len(alpha) == 1:
             alpha.append('talgc')  # default rule
         if 'r' in alpha[0]:
-            mode.add(Mode.Regular)
+            mode.add(ModeEnum.Regular)
         if 'c' in alpha[0]:
-            mode.add(Mode.Challenge)
+            mode.add(ModeEnum.Challenge)
         if 'o' in alpha[0]:
-            mode.add(Mode.Open)
+            mode.add(ModeEnum.Open)
         if 'x' in alpha[0]:
-            mode.add(Mode.X)
+            mode.add(ModeEnum.X)
         if 'f' in alpha[0]:
-            mode.add(Mode.Fest)
+            mode.add(ModeEnum.Fest)
 
         if 't' in alpha[1]:
-            rule.add('TURF_WAR')
-        if 'a' in alpha[1]:  # AREA
-            rule.add('AREA')
-        if 'l' in alpha[1]:  # LOFT
-            rule.add('LOFT')
-        if 'g' in alpha[1]:  # GOAL
-            rule.add('GOAL')
-        if 'c' in alpha[1]:  # CLAM
-            rule.add('CLAM')
+            rule.add(RuleEnum.TurfWar)
+        if 'a' in alpha[1]:
+            rule.add(RuleEnum.Area)
+        if 'l' in alpha[1]:
+            rule.add(RuleEnum.Loft)
+        if 'g' in alpha[1]:
+            rule.add(RuleEnum.Goal)
+        if 'c' in alpha[1]:
+            rule.add(RuleEnum.Clam)
 
         if len(digit) == 0:
             digit.append(2)  # default time
@@ -373,7 +182,7 @@ class BattleQueryFilter:
         def _filter_schedule(schedule: BattleSchedule) -> bool:
             if schedule.setting.mode not in mode:
                 return False
-            if schedule.setting.rule.id not in rule:
+            if schedule.setting.rule not in rule:
                 return False
             if not (lowerbound <= schedule.start_time < upperbound or lowerbound < schedule.end_time <= upperbound or (schedule.start_time <= lowerbound and upperbound <= schedule.end_time)):
                 return False
@@ -391,17 +200,6 @@ async def output_battle_schedule(schedule: BattleSchedule, update: Update, conte
     profile = current_profile(context)
     battle_cache: dict[str, str] = context.bot_data[BotData.BattleImageIDs]
     file_id = battle_cache[battle_key(schedule.setting.stage)]
-    mode_text = ''
-    if schedule.setting.mode == Mode.Regular:
-        mode_text = _('Regular Battle')
-    elif schedule.setting.mode == Mode.Challenge:
-        mode_text = _('Anarchy Battle (Series)')
-    elif schedule.setting.mode == Mode.Open:
-        mode_text = _('Anarchy Battle (Open)')
-    elif schedule.setting.mode == Mode.X:
-        mode_text = _('X Battle')
-    elif schedule.setting.mode == Mode.Fest:
-        mode_text = _('Splatfest Battle')
     text = '\n'.join([
         _('Time: <code>{start_time}</code> ~ <code>{end_time}</code>'),
         _('Mode: <code>{mode}</code>'),
@@ -410,9 +208,9 @@ async def output_battle_schedule(schedule: BattleSchedule, update: Update, conte
         _('  - <code>{stage_2}</code>'),
         _('Rule: <code>{rule}</code>'),
     ]).format(
-        start_time=format_time(schedule.start_time.astimezone(pytz.timezone(profile.timezone))),
-        end_time=format_time(schedule.end_time.astimezone(pytz.timezone(profile.timezone))),
-        mode=mode_text,
+        start_time=format_schedule_time(schedule.start_time.astimezone(pytz.timezone(profile.timezone))),
+        end_time=format_schedule_time(schedule.end_time.astimezone(pytz.timezone(profile.timezone))),
+        mode=_(ModeEnum.name(schedule.setting.mode)),
         stage_1=schedule.setting.stage[0].name,
         stage_2=schedule.setting.stage[1].name,
         rule=schedule.setting.rule.name,
@@ -424,7 +222,7 @@ async def battle_schedule_query(update: Update, context: ContextTypes.DEFAULT_TY
     profile = current_profile(context)
     args = context.args
     if not BattleQueryFilter.validate(args):
-        await update.message.reply_text(text=_('Invalid query arguments.\n\n') + __message_battle_schedule_query_instruction(_))
+        await update.message.reply_text(text=_('Invalid query arguments.\n\n') + _message_battle_schedule_query_instruction(_))
         return
     resp = await stage_schedule(profile)
     schedules = ScheduleParser.schedules(resp)
@@ -436,10 +234,10 @@ async def battle_schedule_query(update: Update, context: ContextTypes.DEFAULT_TY
         await output_battle_schedule(schedule, update, context)
 
 
-def __message_battle_schedule_query_instruction(_: Callable[[str], str]):
+def _message_battle_schedule_query_instruction(_: Callable[[str], str]):
     return '\n'.join([
         _('Parameters: [MODE] [RULE] [TIME]'),
-        _('[RULE]'),
+        _('[MODE]'),
         _('  - r: {regular}'),
         _('  - c: {challenge}'),
         _('  - o: {open}'),
@@ -448,7 +246,7 @@ def __message_battle_schedule_query_instruction(_: Callable[[str], str]):
         _('[RULE]'),
         _('  - t: {turf_war}'),
         _('  - a: {area}'),
-        _('  - l: {lift}'),
+        _('  - l: {loft}'),
         _('  - g: {goal}'),
         _('  - c: {clam}'),
         _('[TIME]'),
@@ -459,16 +257,16 @@ def __message_battle_schedule_query_instruction(_: Callable[[str], str]):
         _('  - /schedules o 20 24: {open} schedules between 20:00 and 24:00.'),
         _('  - /schedules x a 2: {x} schedules with {area} in next 4 hours if existing.'),
     ]).format(
-        regular=_('Regular Battle'),
-        challenge=_('Anarchy Battle (Series)'),
-        open=_('Anarchy Battle (Open)'),
-        x=_('X Battle'),
-        fest=_('Splatfest Battle'),
-        turf_war=_('TURF_WAR'),
-        area=_('AREA'),
-        lift=_('LIFT'),
-        goal=_('GOAL'),
-        clam=_('CLAM'),
+        regular=_(ModeEnum.Regular.name),
+        challenge=_(ModeEnum.Challenge.name),
+        open=_(ModeEnum.Open.name),
+        x=_(ModeEnum.X.name),
+        fest=_(ModeEnum.Fest.name),
+        turf_war=_(RuleEnum.TurfWar.name),
+        area=_(RuleEnum.Area.name),
+        loft=_(RuleEnum.Loft.name),
+        goal=_(RuleEnum.Goal.name),
+        clam=_(RuleEnum.Clam.name),
     )
 
 
@@ -516,8 +314,8 @@ async def output_job_schedule(schedule: JobSchedule, update: Update, context: Co
         _('  - <code>{weapon_4}</code>'),
         _('{remaining_text}')
     ]).format(
-        start_time=format_time(schedule.start_time.astimezone(pytz.timezone(profile.timezone))),
-        end_time=format_time(schedule.end_time.astimezone(pytz.timezone(profile.timezone))),
+        start_time=format_schedule_time(schedule.start_time.astimezone(pytz.timezone(profile.timezone))),
+        end_time=format_schedule_time(schedule.end_time.astimezone(pytz.timezone(profile.timezone))),
         stage=schedule.setting.stage.name,
         weapon_1=schedule.setting.weapons[0].name,
         weapon_2=schedule.setting.weapons[1].name,
@@ -532,7 +330,7 @@ async def job_schedule_query(update: Update, context: ContextTypes.DEFAULT_TYPE)
     profile = current_profile(context)
     args = context.args
     if not JobQueryFilter.validate(args):
-        await update.message.reply_text(text=_('Invalid query arguments.\n\n') + __message_job_schedule_query_instruction(_))
+        await update.message.reply_text(text=_('Invalid query arguments.\n\n') + _message_job_schedule_query_instruction(_))
         return
     resp = await stage_schedule(profile)
     schedules = ScheduleParser.schedules(resp)
@@ -544,7 +342,7 @@ async def job_schedule_query(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await output_job_schedule(schedule, update, context)
 
 
-def __message_job_schedule_query_instruction(_: Callable[[str], str]):
+def _message_job_schedule_query_instruction(_: Callable[[str], str]):
     return '\n'.join([
         _('Parameters: [Next]'),
         _('[Next]'),

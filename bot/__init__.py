@@ -1,5 +1,4 @@
 import os.path
-import sqlite3
 import sys
 
 import telegram.ext
@@ -8,7 +7,6 @@ from telegram.ext import Defaults, ApplicationBuilder, PicklePersistence, Persis
 
 import config
 from bot import profiles, start, jobs, data, nintendo, schedules, admin
-from bot.data import Consts
 from bot.utils import BackoffRetryRequest
 
 
