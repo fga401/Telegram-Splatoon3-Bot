@@ -17,12 +17,11 @@ def _judgement_emoji(text: str) -> str:
     return judgement_emoji
 
 
-
 def _message_battle_detail(_: Callable[[str], str], battle: BattleDetail, profile: Profile) -> str:
     if battle.judgement == Judgement.Win:
-        judgement_text = _('{judgement_emoji} Victory').format(judgement_emoji=Emoji.Victory)
+        judgement_text = _('{judgement_emoji} VICTORY').format(judgement_emoji=_judgement_emoji(battle.judgement))
     elif battle.judgement == Judgement.Lose:
-        judgement_text = _('{judgement_emoji} Defeat').format(judgement_emoji=Emoji.Defeat)
+        judgement_text = _('{judgement_emoji} DEFEAT').format(judgement_emoji=_judgement_emoji(battle.judgement))
     else:
         judgement_text = ''
     end_time = battle.start_time + datetime.timedelta(seconds=battle.duration)
@@ -47,20 +46,19 @@ def _message_battle_detail(_: Callable[[str], str], battle: BattleDetail, profil
     count_bar = _message_count_bar(paints)
     teams_text = [_message_team_detail(_, team, name) for name, team in zip(team_names, teams)]
     text = '\n'.join([
-        _('<b>[{judgement_text}]</b>'),
-        _('  - Start Time: <code>{start_time}</code>'),
-        _('  - End Time: <code>{end_time}</code>'),
-        _('  - Mode: <code>{mode}</code>'),
-        _('  - Rule: <code>{rule}</code>'),
-        _('  - Stage: <code>{stage}</code>'),
-        _('  - Count: {count_bar}'),
+        _('<b>[ {judgement_text} ]</b> {count_bar}'),
+        _('    - Start Time: <code>{start_time}</code>'),
+        _('    - End Time: <code>{end_time}</code>'),
+        _('    - Mode: <code>{mode}</code>'),
+        _('    - Rule: <code>{rule}</code>'),
+        _('    - Stage: <code>{stage}</code>'),
         *teams_text,
         _message_awards_detail(_, battle.awards),
     ]).format(
         judgement_text=judgement_text,
         start_time=format_detail_time(battle.start_time.astimezone(pytz.timezone(profile.timezone))),
         end_time=format_detail_time(end_time.astimezone(pytz.timezone(profile.timezone))),
-        mode=ModeEnum.name(battle.mode),
+        mode=_(ModeEnum.name(battle.mode)),
         rule=battle.rule.name,
         stage=battle.stage.name,
         count_bar=count_bar,
@@ -68,54 +66,57 @@ def _message_battle_detail(_: Callable[[str], str], battle: BattleDetail, profil
     return text
 
 
-def _message_count_bar(paints: list[float]):
+def _message_count_bar(paints: list[float | int]):
     total = sum(paints)
-    segments: list[int] = [int(score // total) for score in paints]
+    segments: list[int] = [int(score * 10 // total) for score in paints]
     if len(segments) == 3:
         attack_1_segment = '≈' * segments[0]
         defense_segment = '=' * (segments[1] // 2)
         attack_2_segment = '≈' * segments[2]
-        return '[{attack_1_score}{attack_1_segment}>/<{defense_segment}{defense_score}{defense_segment}>/<{attack_2_segment}{attack_2_score}]'.format(
+        return '[ {attack_1_score}{attack_1_segment}&gt;/&lt;{defense_segment}{defense_score}{defense_segment}&gt;/&lt;{attack_2_segment}{attack_2_score} ]'.format(
             attack_1_segment=attack_1_segment,
             defense_segment=defense_segment,
             attack_2_segment=attack_2_segment,
-            attack_1_score=paints[0],
-            defense_score=paints[1],
-            attack_2_score=paints[2],
+            attack_1_score=_score(paints[0]),
+            defense_score=_score(paints[1]),
+            attack_2_score=_score(paints[2]),
         )
     else:
-        return '[{my_score}{my_segment}>/<{other_segment}{other_score}]'.format(
+        return '[ {my_score}{my_segment}&gt;/&lt;{other_segment}{other_score} ]'.format(
             my_segment='≈' * segments[0],
             other_segment='=' * segments[1],
-            my_score=paints[0],
-            other_score=paints[1],
+            my_score=_score(paints[0]),
+            other_score=_score(paints[1]),
         )
+
+
+def _score(score: float | int) -> str:
+    if isinstance(score, float):
+        return f'{score:.1f}'
+    elif isinstance(score, int):
+        return f'{score:d}'
+    else:
+        return ''
 
 
 def _message_team_detail(_: Callable[[str], str], team: Team, team_name: str) -> str:
     players_text = [_message_player_detail(_, play) for play in team.players]
-    if team.judgement == Judgement.Win:
-        judgement_emoji = Emoji.Victory
-    elif team.judgement == Judgement.Lose:
-        judgement_emoji = Emoji.Defeat
-    else:
-        judgement_emoji = ''
     return '\n'.join([
-        _('<b>[{judgement_emoji} {team_name}]</b>'),
+        _('<b>[ {judgement_emoji} {team_name} ]</b>'),
         *players_text,
     ]).format(
-        judgement_emoji=judgement_emoji,
+        judgement_emoji=_judgement_emoji(team.judgement),
         team_name=team_name,
     )
 
 
 def _message_player_detail(_: Callable[[str], str], player: Player) -> str:
-    myself = ' ' if not player.myself else '*'
+    myself = '  ' if not player.myself else '*'
     return '\n'.join([
-        _('{myself} <code>{name}</code>'),
-        _('    - Weapon: <code>{weapon}</code>'),
-        _('    - K(A)/D/SP: <code>{kill}({assist})/{death}/{special}</code>'),
-        _('    - Point: <code>{paint}</code>'),
+        _('<b>{myself}  [ <code>{name}</code> ]</b>'),
+        _('        - Weapon: <code>{weapon}</code>'),
+        _('        - K(A)/D/SP: <code>{kill}({assist})/{death}/{special}</code>'),
+        _('        - Point: <code>{paint}</code>'),
     ]).format(
         myself=myself,
         name=player.name,
@@ -140,10 +141,10 @@ def _award_emoji(text: str) -> str:
 
 def _message_awards_detail(_: Callable[[str], str], awards: list[Award]) -> str:
     awards_text = [
-        '  - {award_emoji} {award_text}'.format(award_emoji=award.rank, award_text=award.name)
+        '    - {award_emoji} {award_text}'.format(award_emoji=_award_emoji(award.rank), award_text=award.name)
         for award in awards
     ]
     return '\n'.join([
-        _('<b>[Award]</b>'),
+        _('<b>[ Award ]</b>'),
         *awards_text,
     ])

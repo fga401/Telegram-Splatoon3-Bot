@@ -7,8 +7,10 @@ from telegram.ext import ContextTypes, CommandHandler
 
 import nintendo.login
 import nintendo.query
-from bot.data import Profile, UserData
+from bot.battles import _message_battle_detail
+from bot.data import Profile, UserData, BattleParser
 from bot.utils import whitelist_filter
+from locales import _
 from nintendo.utils import ExpiredTokenError
 
 logger = logging.getLogger('bot.nintendo')
@@ -85,11 +87,27 @@ async def download_image(profile: Profile, url: str) -> bytes:
 async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.warning(f'test')
     profile: Profile = context.user_data[UserData.Profiles][context.user_data[UserData.Current]]
-    data = await battle_detail(profile, "VnNIaXN0b3J5RGV0YWlsLXUtcTRncm9td3dvdDJjdnk1aGFubW06UkVDRU5UOjIwMjMwNDAzVDAxMDE1NF82ZGEzN2RmNy04YmE5LTQ2ZWYtYTU1NC0wZmQ5YjM5OWVhMjI=")
+    # data = await battle_detail(profile, "VnNIaXN0b3J5RGV0YWlsLXUtcTRncm9td3dvdDJjdnk1aGFubW06UkVDRU5UOjIwMjMwNDAzVDAxMDE1NF82ZGEzN2RmNy04YmE5LTQ2ZWYtYTU1NC0wZmQ5YjM5OWVhMjI=")
     # data = await battles(profile)
-    logger.warning(f'home data = {data}')
-    with open('regular_battle_detail.json', 'w', encoding='utf-8') as f:
-        f.write(data)
+    # logger.warning(f'home data = {data}')
+    # with open('regular_battle_detail.json', 'w', encoding='utf-8') as f:
+    #     f.write(data)
+    files = [
+        'regular_battle_detail.json',
+        'challenge_battle_detail.json',
+        'open_battle_detail.json',
+        'x_battle_deatil.json',
+        'fest_open_battle_detail.json',
+        'fest_challenge_battle_detail.json',
+        'fest_tri_color_battle_detail.json',
+    ]
+    for file in files:
+        with open(f'./json/{file}', 'r', encoding='utf-8') as f:
+            data = f.read()
+            detail = BattleParser.battle_detail(data)
+            text = _message_battle_detail(_, detail, profile)
+            await update.message.reply_text(text=text)
+
 
 handlers = [
     CommandHandler('test', test, filters=whitelist_filter),

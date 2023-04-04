@@ -379,11 +379,11 @@ def _keyboard_profile_name(name: str, is_current: bool):
 def _message_profile_detail(_: Callable[[str], str], profile: Profile):
     return '\n'.join([
         '',
-        _('  - Profile Name = <code>{profile_name}</code>'),
-        _('  - Account Name = <code>{account_name}</code>'),
-        _('  - Country = <code>{country}</code>'),
-        _('  - Language = <code>{language}</code>'),
-        _('  - Timezone = <code>{timezone}</code>'),
+        _('    - Profile Name = <code>{profile_name}</code>'),
+        _('    - Account Name = <code>{account_name}</code>'),
+        _('    - Country = <code>{country}</code>'),
+        _('    - Language = <code>{language}</code>'),
+        _('    - Timezone = <code>{timezone}</code>'),
     ]).format(
         profile_name=profile.name,
         account_name=profile.account_name,
@@ -395,17 +395,17 @@ def _message_profile_detail(_: Callable[[str], str], profile: Profile):
 
 def _message_profile_name_instruction(_: Callable[[str], str]):
     return '\n'.join([
-        _('  - format: <code>.{1,20}</code>'),
-        _('  - example: <code>工</code>, <code>MyProfile</code>'),
+        _('    - format: <code>.{1,20}</code>'),
+        _('    - example: <code>工</code>, <code>MyProfile</code>'),
     ])
 
 
 def _message_profile_timezone_instruction(_: Callable[[str], str]):
     return '\n'.join([
         _('Example:'),
-        _('  - <code>Asia/Shanghai</code>'),
-        _('  - <code>Europe/London</code>'),
-        _('  - <code>Asia/Tokyo</code>'),
+        _('    - <code>Asia/Shanghai</code>'),
+        _('    - <code>Europe/London</code>'),
+        _('    - <code>Asia/Tokyo</code>'),
     ])
 
 

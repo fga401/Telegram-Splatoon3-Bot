@@ -89,13 +89,13 @@ class Mode:
         return hash((self.id, self.mode))
 
     def __eq__(self, other):
-        return isinstance(other, Rule) and self.id == other.id and self.mode == other.mode
+        return isinstance(other, Mode) and self.id == other.id and self.mode == other.mode
 
 
 class ModeEnum:
     Regular = Mode(id='VnNNb2RlLTE=', mode='REGULAR')  # TODO
-    Challenge = Mode(id='VnNNb2RlLTI=', mode='CHALLENGE')  # TODO
-    Open = Mode(id='VnNNb2RlLTUx', mode='OPEN')  # TODO
+    Challenge = Mode(id='VnNNb2RlLTI=', mode='BANKARA')  # TODO
+    Open = Mode(id='VnNNb2RlLTUx', mode='BANKARA')  # TODO
     X = Mode(id='VnNNb2RlLTM=', mode='X_MATCH')
     Fest = Mode(id='', mode='FEST')
     FestOpen = Mode(id='VnNNb2RlLTY=', mode='FEST')
@@ -400,9 +400,11 @@ class ScheduleParser:
         ]
 
 
+
+
 class Judgement:
     Win = "WIN"
-    Lose = "Lose"
+    Lose = "LOSE"
 
 
 class Knockout(Judgement):
@@ -454,15 +456,15 @@ class Battle:
     rule: Rule
     mode: Mode
     stage: Stage
-    judgement: Judgement
-    knockout: Knockout
+    judgement: str
+    knockout: str
 
 
 @dataclass
 class Team:
-    score: float
+    score: float | int
     tricolor_role: str
-    judgement: Judgement
+    judgement: str
     players: list[Player]
     order: int
 
@@ -475,7 +477,7 @@ class Rank:
 @dataclass
 class Award:
     name: str
-    rank: Rank
+    rank: str
 
 
 @dataclass
@@ -536,9 +538,65 @@ class BattleParser:
             ),
             judgement=node['judgement'],
             knockout=node['knockout'],
-            my_team=Team(
+            my_team=BattleParser.__team_detail(node['myTeam']),
+            other_teams=[BattleParser.__team_detail(team) for team in node['otherTeams']],
+            duration=node['duration'],
+            start_time=datetime.datetime.fromisoformat(node['playedTime']),
+            awards=[BattleParser.__award_detail(award) for award in node['awards']]
+        )
 
-            )
+    @staticmethod
+    def __team_detail(node) -> Team:
+        score = node['result']['score']
+        if score is None:
+            score = node['result']['paintRatio'] * 100
+        players = [BattleParser.__player_detail(play) for play in node['players']]
+        return Team(
+            score=score,
+            tricolor_role=node['tricolorRole'],
+            judgement=node['judgement'],
+            players=players,
+            order=node['order']
+        )
+
+    @staticmethod
+    def __player_detail(node) -> Player:
+        return Player(
+            id=node['id'],
+            name=node['name'],
+            byname=node['byname'],
+            paint=node['paint'],
+            myself=node['isMyself'],
+            weapon=Weapon(
+                id=node['weapon']['id'],
+                name=node['weapon']['name'],
+                image_url=node['weapon']['image']['url'],
+            ),
+            result=PlayerResult(
+                kill=node['result']['kill'],
+                death=node['result']['death'],
+                assist=node['result']['assist'],
+                special=node['result']['special'],
+            ),
+            head_gear=BattleParser.__gear_detail(node['headGear']),
+            clothing_gear=BattleParser.__gear_detail(node['clothingGear']),
+            shoes_gear=BattleParser.__gear_detail(node['shoesGear']),
+        )
+
+    @staticmethod
+    def __gear_detail(node) -> Gear:
+        return Gear(
+            name=node['name'],
+            primary=node['primaryGearPower']['name'],
+            additional=[power['name'] for power in node['additionalGearPowers']],
+            brand=node['brand']['name']
+        )
+
+    @staticmethod
+    def __award_detail(node) -> Award:
+        return Award(
+            name=node['name'],
+            rank=node['rank'],
         )
 
 

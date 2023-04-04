@@ -33,7 +33,7 @@ async def monitor_battle(context: ContextTypes.DEFAULT_TYPE):
     for battle_id in battle_ids[:cnt:-1]:
         resp = await battle_detail(profile, battle_id)
         detail = BattleParser.battle_detail(resp)
-        text = _message_battle_detail(_, detail)
+        text = _message_battle_detail(_, detail, profile)
         context.bot.send_message(chat_id=context.job.chat_id, text=text)
     if len(battle_ids) > 0:
         user_data[UserData.LastBattle] = battle_ids[0]
