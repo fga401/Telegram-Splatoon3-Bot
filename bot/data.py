@@ -124,6 +124,7 @@ class ModeEnum:
         elif mode == ModeEnum.Private:
             return 'Private'
 
+
 # placeholder
 _('Regular')
 _('Challenge')
@@ -417,11 +418,22 @@ class Gear:
 
 
 @dataclass
+class PlayerResult:
+    kill: int
+    death: int
+    assist: int
+    special: int
+
+
+@dataclass
 class Player:
     id: str
     name: str
     byname: str
+    paint: int
+    myself: bool
     weapon: Weapon
+    result: PlayerResult
     head_gear: Gear
     clothing_gear: Gear
     shoes_gear: Gear
@@ -449,7 +461,7 @@ class Battle:
 @dataclass
 class Team:
     score: float
-    tricolorRole: str
+    tricolor_role: str
     judgement: Judgement
     players: list[Player]
     order: int
