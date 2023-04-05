@@ -193,7 +193,7 @@ def _message_coop_detail(_: Callable[[str], str], coop: CoopDetail, profile: Pro
         _('    - Count:  🟡 <code>{golden_deliver_count}</code>    🟠 <code>{deliver_count}</code>'),
         _message_scale_bar(_, coop.scale),
         _('<b>[ Waves ]</b>'),
-        *[_message_wave(_, wave, coop.boss, coop.result_wave < wave.wave_number) for wave in coop.wave_results],
+        *[_message_wave(_, wave, coop.boss, coop.result_wave == 0 or coop.result_wave > wave.wave_number) for wave in coop.wave_results],
         _('<b>[ Team ]</b>'),
         *[_message_player(_, player) for player in player_results],
         _('<b>[ Boss Defeated ]</b>'),
@@ -213,7 +213,7 @@ def _message_coop_detail(_: Callable[[str], str], coop: CoopDetail, profile: Pro
 
 def _message_smell_bar(smell: int) -> str:
     remain = 5 - smell
-    return '[ {smell}{smell_segment}&gt;{remain_segment} ]'.format(
+    return '[ ({smell}/5) {smell_segment}&gt;{remain_segment} ]'.format(
         smell=smell,
         smell_segment='=' * smell,
         remain_segment='-' * remain,
@@ -302,9 +302,14 @@ def _message_player(_: Callable[[str], str], player: CoopPlayerResult) -> str:
 
 
 def _message_enemy(_: Callable[[str], str], enemy: EnemyResult) -> str:
-    return _('    - <code>{enemy_name}</code>:  <code>{team_defeat_count}({defeat_count})/{pop_count}</code>').format(
+    if enemy.team_defeat_count == enemy.pop_count:
+        clean = '  <b>Clean!</b>'
+    else:
+        clean = ''
+    return _('    - <code>{enemy_name}</code>:  <code>{team_defeat_count}({defeat_count})/{pop_count}</code>{clean}').format(
         enemy_name=enemy.enemy.name,
         team_defeat_count=enemy.team_defeat_count,
         defeat_count=enemy.defeat_count,
         pop_count=enemy.pop_count,
+        clean=clean,
     )

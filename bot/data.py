@@ -33,6 +33,7 @@ class UserData:
     MessageID_Timezone = 'MSG_ID_TZ'
     LastBattle = 'LAST_BATTLE'
     LastCoop = 'LAST_COOP'
+    Monitoring = 'MONITORING'
 
 
 @dataclass
@@ -46,7 +47,6 @@ class Profile:
     country: str = ''
     language: str = ''
     timezone: str = ''
-    tg_user: User = None
 
 
 @dataclass
@@ -493,7 +493,7 @@ class CommonParser:
     def rule(node) -> Rule:
         return Rule(
             id=node['id'],
-            rule=node['rule'],
+            rule=node.get('rule', ''),
             name=node['name'],
         )
 

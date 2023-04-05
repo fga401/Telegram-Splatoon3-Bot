@@ -51,31 +51,47 @@ def auto_update_profile(fn):
     return wrapper
 
 
+def auto_logging(fn):
+    @functools.wraps(fn)
+    async def wrapper(*args, **kwargs):
+        data = await fn(*args, **kwargs)
+        logger.debug(f'Got Nintendo responce. {fn.__name__} = {data}')
+        return data
+
+    return wrapper
+
+
+@auto_logging
 @auto_update_profile
 async def home(profile: Profile) -> str:
     return await nintendo.query.do_query(profile.gtoken, profile.bullet_token, profile.language, profile.country, nintendo.query.QueryKey.HomeQuery, varname='naCountry', varvalue=profile.country)
 
 
+@auto_logging
 @auto_update_profile
 async def stage_schedule(profile: Profile) -> str:
     return await nintendo.query.do_query(profile.gtoken, profile.bullet_token, profile.language, profile.country, nintendo.query.QueryKey.StageScheduleQuery)
 
 
+@auto_logging
 @auto_update_profile
 async def battles(profile: Profile) -> str:
     return await nintendo.query.do_query(profile.gtoken, profile.bullet_token, profile.language, profile.country, nintendo.query.QueryKey.LatestBattleHistoriesQuery)
 
 
+@auto_logging
 @auto_update_profile
 async def coops(profile: Profile) -> str:
     return await nintendo.query.do_query(profile.gtoken, profile.bullet_token, profile.language, profile.country, nintendo.query.QueryKey.CoopHistoryQuery)
 
 
+@auto_logging
 @auto_update_profile
 async def battle_detail(profile: Profile, vs_id: str) -> str:
     return await nintendo.query.do_query(profile.gtoken, profile.bullet_token, profile.language, profile.country, nintendo.query.QueryKey.VsHistoryDetailQuery, varname='vsResultId', varvalue=vs_id)
 
 
+@auto_logging
 @auto_update_profile
 async def coop_detail(profile: Profile, coop_id: str) -> str:
     return await nintendo.query.do_query(profile.gtoken, profile.bullet_token, profile.language, profile.country, nintendo.query.QueryKey.CoopHistoryDetailQuery, varname='coopHistoryDetailId', varvalue=coop_id)

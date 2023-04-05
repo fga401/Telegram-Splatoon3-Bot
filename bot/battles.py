@@ -21,7 +21,7 @@ class BattleParser:
                 judgement=node['judgement'],
                 knockout=node['knockout'],
             )
-            for node in data['data']['latestBattleHistories']['historyGroups']['nodes']
+            for group in data['data']['latestBattleHistories']['historyGroups']['nodes'] for node in group['historyDetails']['nodes']
         ]
 
     @staticmethod
@@ -161,7 +161,7 @@ def _message_count_bar(paints: list[float | int]):
         attack_1_segment = '≈' * segments[0]
         defense_segment = '=' * (segments[1] // 2)
         attack_2_segment = '≈' * segments[2]
-        return '[ {attack_1_score}{attack_1_segment}&gt;/&lt;{defense_segment}{defense_score}{defense_segment}&gt;/&lt;{attack_2_segment}{attack_2_score} ]'.format(
+        return '[ {attack_1_score} {attack_1_segment}&gt;/&lt;{defense_segment} {defense_score} {defense_segment}&gt;/&lt;{attack_2_segment} {attack_2_score} ]'.format(
             attack_1_segment=attack_1_segment,
             defense_segment=defense_segment,
             attack_2_segment=attack_2_segment,

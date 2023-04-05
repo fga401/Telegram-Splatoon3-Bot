@@ -43,6 +43,9 @@ def init_user_data(context: ContextTypes.DEFAULT_TYPE):
     context.user_data.setdefault(UserData.MessageID_Name, '')
     context.user_data.setdefault(UserData.MessageID_Link, '')
     context.user_data.setdefault(UserData.MessageID_Timezone, '')
+    context.user_data.setdefault(UserData.LastBattle, None)
+    context.user_data.setdefault(UserData.LastCoop, None)
+    context.user_data.setdefault(UserData.Monitoring, False)
 
 
 async def profile_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
