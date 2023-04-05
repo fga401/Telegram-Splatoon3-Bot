@@ -1,5 +1,4 @@
 import datetime
-import json
 import logging
 from dataclasses import dataclass
 
@@ -21,7 +20,7 @@ class BotData:
 
     StageImageIDs = "STAGE_IMAGE_IDS"
     BattleImageIDs = "BATTLE_IMAGE_IDS"
-    JobImageIDs = "JOB_IMAGE_IDS"
+    CoopImageIDs = "COOP_IMAGE_IDS"
 
 
 class UserData:
@@ -33,7 +32,7 @@ class UserData:
     MessageID_Link = 'MSG_ID_LINK'
     MessageID_Timezone = 'MSG_ID_TZ'
     LastBattle = 'LAST_BATTLE'
-    LastJob = 'LAST_JOB'
+    LastCoop = 'LAST_COOP'
 
 
 @dataclass
@@ -93,9 +92,9 @@ class Mode:
 
 
 class ModeEnum:
-    Regular = Mode(id='VnNNb2RlLTE=', mode='REGULAR')  # TODO
-    Challenge = Mode(id='VnNNb2RlLTI=', mode='BANKARA')  # TODO
-    Open = Mode(id='VnNNb2RlLTUx', mode='BANKARA')  # TODO
+    Regular = Mode(id='VnNNb2RlLTE=', mode='REGULAR')
+    Challenge = Mode(id='VnNNb2RlLTI=', mode='BANKARA')
+    Open = Mode(id='VnNNb2RlLTUx', mode='BANKARA')
     X = Mode(id='VnNNb2RlLTM=', mode='X_MATCH')
     Fest = Mode(id='', mode='FEST')
     FestOpen = Mode(id='VnNNb2RlLTY=', mode='FEST')
@@ -169,7 +168,7 @@ class BattleSetting:
 
 
 @dataclass
-class JobSetting:
+class CoopSetting:
     stage: Stage
     weapons: tuple[Weapon, Weapon, Weapon, Weapon]
 
@@ -186,8 +185,8 @@ class BattleSchedule(Schedule):
 
 
 @dataclass
-class JobSchedule(Schedule):
-    setting: JobSetting
+class CoopSchedule(Schedule):
+    setting: CoopSetting
 
 
 @dataclass
@@ -199,207 +198,7 @@ class Schedules:
     open: list[BattleSchedule]
     x: list[BattleSchedule]
     fest: list[BattleSchedule]
-    coop: list[JobSchedule]
-
-
-class ScheduleParser:
-    @staticmethod
-    def schedules(schedules: str) -> Schedules:
-        data = json.loads(schedules)
-        regular_schedules = [
-            BattleSchedule(
-                setting=BattleSetting(
-                    rule=Rule(
-                        id=node['regularMatchSetting']['vsRule']['id'],
-                        rule=node['regularMatchSetting']['vsRule']['rule'],
-                        name=node['regularMatchSetting']['vsRule']['name'],
-                    ),
-                    mode=ModeEnum.Regular,
-                    stage=(
-                        Stage(
-                            id=node['regularMatchSetting']['vsStages'][0]['id'],
-                            name=node['regularMatchSetting']['vsStages'][0]['name'],
-                            image_url=node['regularMatchSetting']['vsStages'][0]['image']['url'],
-                        ),
-                        Stage(
-                            id=node['regularMatchSetting']['vsStages'][1]['id'],
-                            name=node['regularMatchSetting']['vsStages'][1]['name'],
-                            image_url=node['regularMatchSetting']['vsStages'][1]['image']['url'],
-                        ),
-                    )
-                ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
-            )
-            for node in data['data']['regularSchedules']['nodes'] if node['regularMatchSetting'] is not None
-        ]
-        challenge_schedules = [
-            BattleSchedule(
-                setting=BattleSetting(
-                    rule=Rule(
-                        id=node['bankaraMatchSettings'][0]['vsRule']['id'],
-                        rule=node['bankaraMatchSettings'][0]['vsRule']['rule'],
-                        name=node['bankaraMatchSettings'][0]['vsRule']['name'],
-                    ),
-                    mode=ModeEnum.Challenge,
-                    stage=(
-                        Stage(
-                            id=node['bankaraMatchSettings'][0]['vsStages'][0]['id'],
-                            name=node['bankaraMatchSettings'][0]['vsStages'][0]['name'],
-                            image_url=node['bankaraMatchSettings'][0]['vsStages'][0]['image']['url'],
-                        ),
-                        Stage(
-                            id=node['bankaraMatchSettings'][0]['vsStages'][1]['id'],
-                            name=node['bankaraMatchSettings'][0]['vsStages'][1]['name'],
-                            image_url=node['bankaraMatchSettings'][0]['vsStages'][1]['image']['url'],
-                        ),
-                    )
-                ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
-            )
-            for node in data['data']['bankaraSchedules']['nodes'] if node['bankaraMatchSettings'] is not None
-        ]
-        open_schedules = [
-            BattleSchedule(
-                setting=BattleSetting(
-                    rule=Rule(
-                        id=node['bankaraMatchSettings'][1]['vsRule']['id'],
-                        rule=node['bankaraMatchSettings'][1]['vsRule']['rule'],
-                        name=node['bankaraMatchSettings'][1]['vsRule']['name'],
-                    ),
-                    mode=ModeEnum.Open,
-                    stage=(
-                        Stage(
-                            id=node['bankaraMatchSettings'][1]['vsStages'][0]['id'],
-                            name=node['bankaraMatchSettings'][1]['vsStages'][0]['name'],
-                            image_url=node['bankaraMatchSettings'][1]['vsStages'][0]['image']['url'],
-                        ),
-                        Stage(
-                            id=node['bankaraMatchSettings'][1]['vsStages'][1]['id'],
-                            name=node['bankaraMatchSettings'][1]['vsStages'][1]['name'],
-                            image_url=node['bankaraMatchSettings'][1]['vsStages'][1]['image']['url'],
-                        ),
-                    )
-                ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
-            )
-            for node in data['data']['bankaraSchedules']['nodes'] if node['bankaraMatchSettings'] is not None
-        ]
-        x_schedules = [
-            BattleSchedule(
-                setting=BattleSetting(
-                    rule=Rule(
-                        id=node['xMatchSetting']['vsRule']['id'],
-                        rule=node['xMatchSetting']['vsRule']['rule'],
-                        name=node['xMatchSetting']['vsRule']['name'],
-                    ),
-                    mode=ModeEnum.X,
-                    stage=(
-                        Stage(
-                            id=node['xMatchSetting']['vsStages'][0]['id'],
-                            name=node['xMatchSetting']['vsStages'][0]['name'],
-                            image_url=node['xMatchSetting']['vsStages'][0]['image']['url'],
-                        ),
-                        Stage(
-                            id=node['xMatchSetting']['vsStages'][1]['id'],
-                            name=node['xMatchSetting']['vsStages'][1]['name'],
-                            image_url=node['xMatchSetting']['vsStages'][1]['image']['url'],
-                        ),
-                    ),
-                ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
-            )
-            for node in data['data']['xSchedules']['nodes'] if node['xMatchSetting'] is not None
-        ]
-        fest_schedules = [
-            BattleSchedule(
-                setting=BattleSetting(
-                    rule=Rule(
-                        id=node['festMatchSetting']['vsRule']['id'],
-                        rule=node['festMatchSetting']['vsRule']['rule'],
-                        name=node['festMatchSetting']['vsRule']['name'],
-                    ),
-                    mode=ModeEnum.Fest,
-                    stage=(
-                        Stage(
-                            id=node['festMatchSetting']['vsStages'][0]['id'],
-                            name=node['festMatchSetting']['vsStages'][0]['name'],
-                            image_url=node['festMatchSetting']['vsStages'][0]['image']['url'],
-                        ),
-                        Stage(
-                            id=node['festMatchSetting']['vsStages'][1]['id'],
-                            name=node['festMatchSetting']['vsStages'][1]['name'],
-                            image_url=node['festMatchSetting']['vsStages'][1]['image']['url'],
-                        ),
-                    ),
-                ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
-            )
-            for node in data['data']['festSchedules']['nodes'] if node['festMatchSetting'] is not None
-        ]
-        coop_schedules = [
-            JobSchedule(
-                setting=JobSetting(
-                    stage=Stage(
-                        id=node['setting']['coopStage']['id'],
-                        name=node['setting']['coopStage']['name'],
-                        image_url=node['setting']['coopStage']['thumbnailImage']['url'],
-                    ),
-                    weapons=(
-                        Weapon(
-                            id='',
-                            name=node['setting']['weapons'][0]['name'],
-                            image_url=node['setting']['weapons'][0]['image']['url'],
-                        ),
-                        Weapon(
-                            id='',
-                            name=node['setting']['weapons'][1]['name'],
-                            image_url=node['setting']['weapons'][1]['image']['url'],
-                        ),
-                        Weapon(
-                            id='',
-                            name=node['setting']['weapons'][2]['name'],
-                            image_url=node['setting']['weapons'][2]['image']['url'],
-                        ),
-                        Weapon(
-                            id='',
-                            name=node['setting']['weapons'][3]['name'],
-                            image_url=node['setting']['weapons'][3]['image']['url'],
-                        ),
-                    )
-                ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
-            )
-            for node in data['data']['coopGroupingSchedule']['regularSchedules']['nodes']
-        ]
-
-        return Schedules(
-            regular=regular_schedules,
-            challenge=challenge_schedules,
-            open=open_schedules,
-            x=x_schedules,
-            fest=fest_schedules,
-            coop=coop_schedules,
-        )
-
-    @staticmethod
-    def stages(schedules: str) -> list[Stage]:
-        data = json.loads(schedules)
-        return [
-            Stage(
-                id=node['id'],
-                name=node['name'],
-                image_url=node['originalImage']['url']
-            )
-            for node in data['data']['vsStages']['nodes']
-        ]
-
-
+    coop: list[CoopSchedule]
 
 
 class Judgement:
@@ -420,11 +219,38 @@ class Gear:
 
 
 @dataclass
-class PlayerResult:
+class BattlePlayerResult:
     kill: int
     death: int
     assist: int
     special: int
+
+
+@dataclass
+class Badge:
+    id: str
+    image_url: str
+
+
+@dataclass
+class Color:
+    a: float
+    b: float
+    g: float
+    r: float
+
+
+@dataclass
+class Background:
+    id: str
+    image_url: str
+    text_color: Color
+
+
+@dataclass
+class Nameplate:
+    background: Background
+    badges: list[Badge | None]
 
 
 @dataclass
@@ -432,22 +258,19 @@ class Player:
     id: str
     name: str
     byname: str
-    paint: int
-    myself: bool
-    weapon: Weapon
-    result: PlayerResult
-    head_gear: Gear
-    clothing_gear: Gear
-    shoes_gear: Gear
+    name_id: str
+    nameplate: Nameplate
 
 
 @dataclass
 class BattlePlayer(Player):
+    myself: bool
     paint: int
-    kill: int
-    death: int
-    assist: int
-    special: int
+    weapon: Weapon
+    result: BattlePlayerResult
+    head_gear: Gear
+    clothing_gear: Gear
+    shoes_gear: Gear
 
 
 @dataclass
@@ -465,7 +288,7 @@ class Team:
     score: float | int
     tricolor_role: str
     judgement: str
-    players: list[Player]
+    players: list[BattlePlayer]
     order: int
 
 
@@ -489,114 +312,196 @@ class BattleDetail(Battle):
     awards: list[Award]
 
 
-class BattleParser:
-    @staticmethod
-    def battle_histories(histories: str) -> list[Battle]:
-        data = json.loads(histories)
-        return [
-            Battle(
-                id=node['id'],
-                rule=Rule(
-                    id=node['vsRule']['id'],
-                    rule=node['vsRule']['rule'],
-                    name=node['vsRule']['name'],
-                ),
-                mode=Mode(
-                    id=node['vsMode']['id'],
-                    mode=node['vsMode']['mode'],
-                ),
-                stage=Stage(
-                    id=node['vsStage']['id'],
-                    name=node['vsStage']['name'],
-                    image_url=node['vsStage']['image']['url'],
-                ),
-                judgement=node['judgement'],
-                knockout=node['knockout'],
-            )
-            for node in data['data']['latestBattleHistories']['historyGroups']['nodes']
-        ]
+class Diff:
+    Keep = 'KEEP'
+    Up = 'UP'
+    Down = 'DOWN'
 
+
+@dataclass
+class Boss:
+    id: str
+    name: str
+    image_url: str
+
+
+@dataclass
+class BossResult:
+    boss: Boss
+    defeat_boss: bool
+
+
+@dataclass
+class Coop:
+    id: str
+    after_grade_name: str
+    after_grade_point: int
+    grade_point_diff: str | None
+    stage: Stage
+    weapons: list[Weapon]
+    boss: BossResult
+
+    @property
+    def clean(self) -> bool:
+        return self.grade_point_diff == Diff.Up
+
+
+@dataclass
+class Uniform:
+    id: str
+    name: str
+    image_url: str
+
+
+@dataclass
+class CoopPlayer(Player):
+    uniform: Uniform
+
+
+@dataclass
+class SpecialWeapon:
+    id: str
+    weapon_id: int
+    name: str
+    image_url: str
+
+
+@dataclass
+class CoopPlayerResult:
+    player: CoopPlayer
+    weapons: list[Weapon]
+    special_weapon: SpecialWeapon
+    defeat_enemy_count: int
+    deliver_count: int
+    golden_assist_count: int
+    golden_deliver_count: int
+    rescue_count: int
+    rescued_count: int
+
+
+@dataclass
+class EventWave:
+    id: str
+    name: str
+
+
+@dataclass
+class WaveResult:
+    wave_number: int
+    water_level: int
+    event_wave: EventWave
+    deliver_norm: int
+    golden_pop_count: int
+    team_deliver_count: int
+    special_weapons: list[SpecialWeapon]
+
+
+@dataclass
+class Enemy:
+    id: str
+    name: str
+    image_url: str
+
+
+@dataclass
+class EnemyResult:
+    defeat_count: int
+    team_defeat_count: int
+    pop_count: int
+    enemy: Enemy
+
+
+@dataclass
+class ScaleResult:
+    gold: int
+    silver: int
+    bronze: int
+
+
+@dataclass
+class CoopDetail(Coop):
+    result_wave: int
+    my_result: CoopPlayerResult
+    member_results: list[CoopPlayerResult]
+    wave_results: list[WaveResult]
+    enemy_results: list[EnemyResult]
+    start_time: datetime.datetime
+    rule: str
+    danger: float
+    smell: int
+    scale: ScaleResult
+    job_point: int
+    job_score: int
+    job_rate: float
+    job_bonus: int
+
+    @property
+    def clean(self) -> bool:
+        return self.result_wave == 0
+
+
+class CommonParser:
     @staticmethod
-    def battle_detail(detail: str) -> BattleDetail:
-        data = json.loads(detail)
-        node = data['data']['vsHistoryDetail']
-        return BattleDetail(
+    def badge(node) -> Badge | None:
+        if node is None:
+            return None
+        return Badge(
             id=node['id'],
-            rule=Rule(
-                id=node['vsRule']['id'],
-                rule=node['vsRule']['rule'],
-                name=node['vsRule']['name'],
-            ),
-            mode=Mode(
-                id=node['vsMode']['id'],
-                mode=node['vsMode']['mode'],
-            ),
-            stage=Stage(
-                id=node['vsStage']['id'],
-                name=node['vsStage']['name'],
-                image_url=node['vsStage']['image']['url'],
-            ),
-            judgement=node['judgement'],
-            knockout=node['knockout'],
-            my_team=BattleParser.__team_detail(node['myTeam']),
-            other_teams=[BattleParser.__team_detail(team) for team in node['otherTeams']],
-            duration=node['duration'],
-            start_time=datetime.datetime.fromisoformat(node['playedTime']),
-            awards=[BattleParser.__award_detail(award) for award in node['awards']]
+            image_url=node['image']['url'],
         )
 
     @staticmethod
-    def __team_detail(node) -> Team:
-        score = node['result']['score']
-        if score is None:
-            score = node['result']['paintRatio'] * 100
-        players = [BattleParser.__player_detail(play) for play in node['players']]
-        return Team(
-            score=score,
-            tricolor_role=node['tricolorRole'],
-            judgement=node['judgement'],
-            players=players,
-            order=node['order']
+    def nameplate(node) -> Nameplate:
+        return Nameplate(
+            background=Background(
+                id=node['background']['id'],
+                image_url=node['background']['image']['url'],
+                text_color=Color(
+                    a=node['background']['textColor']['a'],
+                    b=node['background']['textColor']['b'],
+                    g=node['background']['textColor']['g'],
+                    r=node['background']['textColor']['r'],
+                ),
+            ),
+            badges=[
+                CommonParser.badge(badge)
+                for badge in node['badges']
+            ]
         )
 
     @staticmethod
-    def __player_detail(node) -> Player:
-        return Player(
+    def weapon(node) -> Weapon:
+        return Weapon(
+            id=node.get('id', ''),
+            name=node['name'],
+            image_url=node['image']['url'],
+        )
+
+    @staticmethod
+    def stage(node, image_name='image') -> Stage:
+        if image_name is not None:
+            image_url = node[image_name]['url']
+        else:
+            image_url = ''
+        return Stage(
+            id=node.get('id', ''),
+            name=node['name'],
+            image_url=image_url,
+        )
+
+    @staticmethod
+    def rule(node) -> Rule:
+        return Rule(
             id=node['id'],
+            rule=node['rule'],
             name=node['name'],
-            byname=node['byname'],
-            paint=node['paint'],
-            myself=node['isMyself'],
-            weapon=Weapon(
-                id=node['weapon']['id'],
-                name=node['weapon']['name'],
-                image_url=node['weapon']['image']['url'],
-            ),
-            result=PlayerResult(
-                kill=node['result']['kill'],
-                death=node['result']['death'],
-                assist=node['result']['assist'],
-                special=node['result']['special'],
-            ),
-            head_gear=BattleParser.__gear_detail(node['headGear']),
-            clothing_gear=BattleParser.__gear_detail(node['clothingGear']),
-            shoes_gear=BattleParser.__gear_detail(node['shoesGear']),
         )
 
     @staticmethod
-    def __gear_detail(node) -> Gear:
-        return Gear(
-            name=node['name'],
-            primary=node['primaryGearPower']['name'],
-            additional=[power['name'] for power in node['additionalGearPowers']],
-            brand=node['brand']['name']
-        )
-
-    @staticmethod
-    def __award_detail(node) -> Award:
-        return Award(
-            name=node['name'],
-            rank=node['rank'],
+    def mode(node) -> Mode:
+        return Mode(
+            id=node['id'],
+            mode=node['mode'],
         )
 
 
@@ -609,7 +514,7 @@ async def _init_bot_data(context: ContextTypes.DEFAULT_TYPE):
     context.bot_data.setdefault(BotData.RegisteredUsers, set())
     context.bot_data.setdefault(BotData.StageImageIDs, dict())
     context.bot_data.setdefault(BotData.BattleImageIDs, dict())
-    context.bot_data.setdefault(BotData.JobImageIDs, dict())
+    context.bot_data.setdefault(BotData.CoopImageIDs, dict())
 
 
 def init_bot_data(application: Application):

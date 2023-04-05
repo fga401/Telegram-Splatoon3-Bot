@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import json
 import logging
 import re
 from typing import Callable
@@ -11,12 +12,102 @@ from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler, Application
 
 import config
-from bot.data import Schedules, BattleSchedule, JobSchedule, Stage, BotData, Profile, ModeEnum, ScheduleParser, RuleEnum
+from bot.data import Schedules, BattleSchedule, CoopSchedule, Stage, BotData, Profile, ModeEnum, RuleEnum, BattleSetting, Rule, Weapon, CoopSetting, CommonParser
 from bot.nintendo import download_image, stage_schedule
 from bot.utils import whitelist_filter, current_profile, format_schedule_time
 from locales import _
 
 logger = logging.getLogger('bot.schedules')
+
+
+class ScheduleParser:
+    @staticmethod
+    def schedules(schedules: str) -> Schedules:
+        data = json.loads(schedules)
+        regular_schedules = [
+            BattleSchedule(
+                setting=ScheduleParser.__setting(node['regularMatchSetting']),
+                start_time=datetime.datetime.fromisoformat(node['startTime']),
+                end_time=datetime.datetime.fromisoformat(node['endTime']),
+            )
+            for node in data['data']['regularSchedules']['nodes'] if node['regularMatchSetting'] is not None
+        ]
+        challenge_schedules = [
+            BattleSchedule(
+                setting=ScheduleParser.__setting(node['bankaraMatchSettings'][0]),
+                start_time=datetime.datetime.fromisoformat(node['startTime']),
+                end_time=datetime.datetime.fromisoformat(node['endTime']),
+            )
+            for node in data['data']['bankaraSchedules']['nodes'] if node['bankaraMatchSettings'] is not None
+        ]
+        open_schedules = [
+            BattleSchedule(
+                setting=ScheduleParser.__setting(node['bankaraMatchSettings'][1]),
+                start_time=datetime.datetime.fromisoformat(node['startTime']),
+                end_time=datetime.datetime.fromisoformat(node['endTime']),
+            )
+            for node in data['data']['bankaraSchedules']['nodes'] if node['bankaraMatchSettings'] is not None
+        ]
+        x_schedules = [
+            BattleSchedule(
+                setting=ScheduleParser.__setting(node['xMatchSetting']),
+                start_time=datetime.datetime.fromisoformat(node['startTime']),
+                end_time=datetime.datetime.fromisoformat(node['endTime']),
+            )
+            for node in data['data']['xSchedules']['nodes'] if node['xMatchSetting'] is not None
+        ]
+        fest_schedules = [
+            BattleSchedule(
+                setting=ScheduleParser.__setting(node['festMatchSetting']),
+                start_time=datetime.datetime.fromisoformat(node['startTime']),
+                end_time=datetime.datetime.fromisoformat(node['endTime']),
+            )
+            for node in data['data']['festSchedules']['nodes'] if node['festMatchSetting'] is not None
+        ]
+        coop_schedules = [
+            CoopSchedule(
+                setting=CoopSetting(
+                    stage=CommonParser.stage(node['setting']['coopStage'], 'thumbnailImage'),
+                    weapons=(
+                        CommonParser.weapon(node['setting']['weapons'][0]),
+                        CommonParser.weapon(node['setting']['weapons'][1]),
+                        CommonParser.weapon(node['setting']['weapons'][2]),
+                        CommonParser.weapon(node['setting']['weapons'][3]),
+                    )
+                ),
+                start_time=datetime.datetime.fromisoformat(node['startTime']),
+                end_time=datetime.datetime.fromisoformat(node['endTime']),
+            )
+            for node in data['data']['coopGroupingSchedule']['regularSchedules']['nodes']
+        ]
+
+        return Schedules(
+            regular=regular_schedules,
+            challenge=challenge_schedules,
+            open=open_schedules,
+            x=x_schedules,
+            fest=fest_schedules,
+            coop=coop_schedules,
+        )
+
+    @staticmethod
+    def stages(schedules: str) -> list[Stage]:
+        data = json.loads(schedules)
+        return [
+            CommonParser.stage(node, 'originalImage')
+            for node in data['data']['vsStages']['nodes']
+        ]
+
+    @staticmethod
+    def __setting(node) -> BattleSetting:
+        return BattleSetting(
+            rule=CommonParser.rule(node['vsRule']),
+            mode=ModeEnum.Fest,
+            stage=(
+                CommonParser.stage(node['vsStages'][0]),
+                CommonParser.stage(node['vsStages'][1]),
+            ),
+        )
 
 
 def bytes_to_image(data: bytes) -> np.ndarray:
@@ -48,15 +139,15 @@ async def upload_battle_image(battle_stages: tuple[Stage, Stage], context: Conte
     battle_cache[battle_key(battle_stages)] = message.photo[0].file_id
 
 
-def job_key(job: JobSchedule) -> str:
-    return f'{job.start_time.timestamp()}'
+def coop_key(coop: CoopSchedule) -> str:
+    return f'{coop.start_time.timestamp()}'
 
 
-async def upload_job_image(job: JobSchedule, profile: Profile, context: ContextTypes.DEFAULT_TYPE):
-    job_cache: dict[str, str] = context.bot_data[BotData.JobImageIDs]
+async def upload_coop_image(coop: CoopSchedule, profile: Profile, context: ContextTypes.DEFAULT_TYPE):
+    coop_cache: dict[str, str] = context.bot_data[BotData.CoopImageIDs]
 
-    download_tasks = [download_image(profile, job.setting.stage.image_url)]
-    for weapon in job.setting.weapons:
+    download_tasks = [download_image(profile, coop.setting.stage.image_url)]
+    for weapon in coop.setting.weapons:
         download_tasks.append(download_image(profile, weapon.image_url))
     buffers = await asyncio.gather(*download_tasks)
     images = [bytes_to_image(buf) for buf in buffers]
@@ -67,19 +158,19 @@ async def upload_job_image(job: JobSchedule, profile: Profile, context: ContextT
     output = cv2.hconcat([stage, weapons])
     buf: bytes = cv2.imencode('.jpg', output)[1].tobytes()
     message = await context.bot.send_photo(chat_id=config.get(config.BOT_STORAGE_CHANNEL), photo=buf)
-    job_cache[job_key(job)] = message.photo[0].file_id
+    coop_cache[coop_key(coop)] = message.photo[0].file_id
 
 
 async def update_schedule_image(data: str, profile: Profile, context: ContextTypes.DEFAULT_TYPE, force=False):
     stages = ScheduleParser.stages(data)
     stage_cache: dict[str, bytes] = context.bot_data[BotData.StageImageIDs]
     battle_cache: dict[str, str] = context.bot_data[BotData.BattleImageIDs]
-    job_cache: dict[str, str] = context.bot_data[BotData.JobImageIDs]
+    coop_cache: dict[str, str] = context.bot_data[BotData.CoopImageIDs]
 
     if force:
         stage_cache.clear()
         battle_cache.clear()
-        job_cache.clear()
+        coop_cache.clear()
 
     download_tasks = []
     stage_ids = []
@@ -99,13 +190,13 @@ async def update_schedule_image(data: str, profile: Profile, context: ContextTyp
         if battle_key(battle_stage) not in battle_cache:
             upload_battle_tasks.append(upload_battle_image(battle_stage, context))
 
-    jobs = [job for job in schedules.coop]
-    upload_job_tasks = []
-    for job in jobs:
-        if job_key(job) not in job_cache:
-            upload_job_tasks.append(upload_job_image(job, profile, context))
+    coops = [coop for coop in schedules.coop]
+    upload_coop_tasks = []
+    for coop in coops:
+        if coop_key(coop) not in coop_cache:
+            upload_coop_tasks.append(upload_coop_image(coop, profile, context))
 
-    results = await asyncio.gather(*(upload_battle_tasks + upload_job_tasks), return_exceptions=True)
+    results = await asyncio.gather(*(upload_battle_tasks + upload_coop_tasks), return_exceptions=True)
     error_cnt = 0
     for r in results:
         if isinstance(r, Exception):
@@ -270,14 +361,14 @@ def _message_battle_schedule_query_instruction(_: Callable[[str], str]):
     )
 
 
-class JobQueryFilter:
+class CoopQueryFilter:
     regexp = r'\d?'
     __compiled = re.compile(regexp)
 
     @staticmethod
     def validate(args: list[str]) -> bool:
         text = ' '.join(args)
-        return JobQueryFilter.__compiled.match(text) is not None
+        return CoopQueryFilter.__compiled.match(text) is not None
 
     @staticmethod
     def filter(args: list[str], schedules: Schedules) -> Schedules:
@@ -288,10 +379,10 @@ class JobQueryFilter:
         return schedules
 
 
-async def output_job_schedule(schedule: JobSchedule, update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def output_coop_schedule(schedule: CoopSchedule, update: Update, context: ContextTypes.DEFAULT_TYPE):
     profile = current_profile(context)
-    job_cache: dict[str, str] = context.bot_data[BotData.JobImageIDs]
-    file_id = job_cache[job_key(schedule)]
+    coop_cache: dict[str, str] = context.bot_data[BotData.CoopImageIDs]
+    file_id = coop_cache[coop_key(schedule)]
     if (schedule.start_time - datetime.datetime.now().astimezone(pytz.UTC)).total_seconds() >= 0:
         second = int((schedule.start_time - datetime.datetime.now().astimezone(pytz.UTC)).total_seconds())
         time_text = _('Job will start in {time}.')
@@ -326,23 +417,23 @@ async def output_job_schedule(schedule: JobSchedule, update: Update, context: Co
     await update.message.reply_photo(photo=file_id, caption=text)
 
 
-async def job_schedule_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def coop_schedule_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     profile = current_profile(context)
     args = context.args
-    if not JobQueryFilter.validate(args):
-        await update.message.reply_text(text=_('Invalid query arguments.\n\n') + _message_job_schedule_query_instruction(_))
+    if not CoopQueryFilter.validate(args):
+        await update.message.reply_text(text=_('Invalid query arguments.\n\n') + _message_coop_schedule_query_instruction(_))
         return
     resp = await stage_schedule(profile)
     schedules = ScheduleParser.schedules(resp)
-    filtered_schedules = JobQueryFilter.filter(args, schedules)
+    filtered_schedules = CoopQueryFilter.filter(args, schedules)
     ordered_schedules = sorted(filtered_schedules.coop, key=lambda x: x.end_time, reverse=True)
     if len(ordered_schedules) == 0:
         await update.message.reply_text(text=_("No matching schedules after filtering."))
     for schedule in ordered_schedules:
-        await output_job_schedule(schedule, update, context)
+        await output_coop_schedule(schedule, update, context)
 
 
-def _message_job_schedule_query_instruction(_: Callable[[str], str]):
+def _message_coop_schedule_query_instruction(_: Callable[[str], str]):
     return '\n'.join([
         _('Parameters: [Next]'),
         _('[Next]'),
@@ -359,5 +450,5 @@ def init_schedules(application: Application):
 
 handlers = [
     CommandHandler('schedules', battle_schedule_query, filters=whitelist_filter),
-    CommandHandler('coop_schedules', job_schedule_query, filters=whitelist_filter),
+    CommandHandler('coop_schedules', coop_schedule_query, filters=whitelist_filter),
 ]

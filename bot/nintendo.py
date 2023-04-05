@@ -7,8 +7,9 @@ from telegram.ext import ContextTypes, CommandHandler
 
 import nintendo.login
 import nintendo.query
-from bot.battles import _message_battle_detail
-from bot.data import Profile, UserData, BattleParser
+from bot.battles import _message_battle_detail, BattleParser
+from bot.coops import CoopParser, _message_coop_detail
+from bot.data import Profile, UserData
 from bot.utils import whitelist_filter
 from locales import _
 from nintendo.utils import ExpiredTokenError
@@ -66,7 +67,7 @@ async def battles(profile: Profile) -> str:
 
 
 @auto_update_profile
-async def jobs(profile: Profile) -> str:
+async def coops(profile: Profile) -> str:
     return await nintendo.query.do_query(profile.gtoken, profile.bullet_token, profile.language, profile.country, nintendo.query.QueryKey.CoopHistoryQuery)
 
 
@@ -76,7 +77,7 @@ async def battle_detail(profile: Profile, vs_id: str) -> str:
 
 
 @auto_update_profile
-async def job_detail(profile: Profile, coop_id: str) -> str:
+async def coop_detail(profile: Profile, coop_id: str) -> str:
     return await nintendo.query.do_query(profile.gtoken, profile.bullet_token, profile.language, profile.country, nintendo.query.QueryKey.CoopHistoryDetailQuery, varname='coopHistoryDetailId', varvalue=coop_id)
 
 
@@ -84,7 +85,7 @@ async def download_image(profile: Profile, url: str) -> bytes:
     return await nintendo.query.download_image(profile.gtoken, profile.bullet_token, profile.language, profile.country, url)
 
 
-async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def test1(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.warning(f'test')
     profile: Profile = context.user_data[UserData.Profiles][context.user_data[UserData.Current]]
     # data = await battle_detail(profile, "VnNIaXN0b3J5RGV0YWlsLXUtcTRncm9td3dvdDJjdnk1aGFubW06UkVDRU5UOjIwMjMwNDAzVDAxMDE1NF82ZGEzN2RmNy04YmE5LTQ2ZWYtYTU1NC0wZmQ5YjM5OWVhMjI=")
@@ -109,6 +110,21 @@ async def test(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(text=text)
 
 
+async def test2(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    profile: Profile = context.user_data[UserData.Profiles][context.user_data[UserData.Current]]
+    files = [
+        'coop_detail_1.json',
+        'coop_detail_2.json',
+    ]
+    for file in files:
+        with open(f'./json/{file}', 'r', encoding='utf-8') as f:
+            data = f.read()
+            detail = CoopParser.coop_detail(data)
+            text = _message_coop_detail(_, detail, profile)
+            await update.message.reply_text(text=text)
+
+
 handlers = [
-    CommandHandler('test', test, filters=whitelist_filter),
+    CommandHandler('test1', test1, filters=whitelist_filter),
+    CommandHandler('test2', test2, filters=whitelist_filter),
 ]

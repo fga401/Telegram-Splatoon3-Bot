@@ -8,9 +8,9 @@ from telegram.ext import ContextTypes, Application, CommandHandler
 import config
 import nintendo.login
 import nintendo.query
-from bot.battles import _message_battle_detail
-from bot.data import BotData, UserData, BattleParser
-from bot.nintendo import home, stage_schedule, battles, battle_detail, jobs
+from bot.battles import _message_battle_detail, BattleParser
+from bot.data import BotData, UserData
+from bot.nintendo import home, stage_schedule, battles, battle_detail, coops
 from bot.schedules import update_schedule_image
 from bot.utils import current_profile
 from locales import _
@@ -39,7 +39,7 @@ async def monitor_battle(context: ContextTypes.DEFAULT_TYPE):
         user_data[UserData.LastBattle] = battle_ids[0]
 
     # TODO: Salmon Run
-    resp = await jobs(profile)
+    resp = await coops(profile)
 
 
 async def monitor_battle_job(update: Update, context: ContextTypes.DEFAULT_TYPE):

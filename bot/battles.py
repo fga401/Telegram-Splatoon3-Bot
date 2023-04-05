@@ -1,10 +1,98 @@
 import datetime
+import json
 from typing import Callable
 
 import pytz
 
-from bot.data import BattleDetail, Judgement, Profile, ModeEnum, Team, Player, Award, Rank
+from bot.data import BattleDetail, Judgement, Profile, ModeEnum, Team, Player, Award, Rank, Gear, Weapon, BattlePlayerResult, Mode, Battle, Rule, Stage, BattlePlayer, Nameplate, Background, CommonParser
 from bot.utils import format_detail_time
+
+
+class BattleParser:
+    @staticmethod
+    def battle_histories(histories: str) -> list[Battle]:
+        data = json.loads(histories)
+        return [
+            Battle(
+                id=node['id'],
+                rule=CommonParser.rule(node['vsRule']),
+                mode=CommonParser.mode(node['vsMode']),
+                stage=CommonParser.stage(node['vsStage']),
+                judgement=node['judgement'],
+                knockout=node['knockout'],
+            )
+            for node in data['data']['latestBattleHistories']['historyGroups']['nodes']
+        ]
+
+    @staticmethod
+    def battle_detail(detail: str) -> BattleDetail:
+        data = json.loads(detail)
+        node = data['data']['vsHistoryDetail']
+        return BattleDetail(
+            id=node['id'],
+            rule=CommonParser.rule(node['vsRule']),
+            mode=CommonParser.mode(node['vsMode']),
+            stage=CommonParser.stage(node['vsStage']),
+            judgement=node['judgement'],
+            knockout=node['knockout'],
+            my_team=BattleParser.__team_detail(node['myTeam']),
+            other_teams=[BattleParser.__team_detail(team) for team in node['otherTeams']],
+            duration=node['duration'],
+            start_time=datetime.datetime.fromisoformat(node['playedTime']),
+            awards=[BattleParser.__award_detail(award) for award in node['awards']]
+        )
+
+    @staticmethod
+    def __team_detail(node) -> Team:
+        score = node['result']['score']
+        if score is None:
+            score = node['result']['paintRatio'] * 100
+        players = [BattleParser.__player_detail(play) for play in node['players']]
+        return Team(
+            score=score,
+            tricolor_role=node['tricolorRole'],
+            judgement=node['judgement'],
+            players=players,
+            order=node['order']
+        )
+
+    @staticmethod
+    def __player_detail(node) -> BattlePlayer:
+        return BattlePlayer(
+            id=node['id'],
+            name=node['name'],
+            byname=node['byname'],
+            name_id=node['nameId'],
+            nameplate=CommonParser.nameplate(node['nameplate']),
+            paint=node['paint'],
+            myself=node['isMyself'],
+            weapon=CommonParser.weapon(node['weapon']),
+            result=BattlePlayerResult(
+                kill=node['result']['kill'],
+                death=node['result']['death'],
+                assist=node['result']['assist'],
+                special=node['result']['special'],
+            ),
+            head_gear=BattleParser.__gear_detail(node['headGear']),
+            clothing_gear=BattleParser.__gear_detail(node['clothingGear']),
+            shoes_gear=BattleParser.__gear_detail(node['shoesGear']),
+        )
+
+    @staticmethod
+    def __gear_detail(node) -> Gear:
+        return Gear(
+            name=node['name'],
+            primary=node['primaryGearPower']['name'],
+            additional=[power['name'] for power in node['additionalGearPowers']],
+            brand=node['brand']['name']
+        )
+
+    @staticmethod
+    def __award_detail(node) -> Award:
+        return Award(
+            name=node['name'],
+            rank=node['rank'],
+        )
 
 
 def _judgement_emoji(text: str) -> str:
@@ -110,7 +198,7 @@ def _message_team_detail(_: Callable[[str], str], team: Team, team_name: str) ->
     )
 
 
-def _message_player_detail(_: Callable[[str], str], player: Player) -> str:
+def _message_player_detail(_: Callable[[str], str], player: BattlePlayer) -> str:
     myself = '  ' if not player.myself else '*'
     return '\n'.join([
         _('<b>{myself}  [ <code>{name}</code> ]</b>'),
