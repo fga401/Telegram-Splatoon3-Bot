@@ -202,12 +202,13 @@ class Schedules:
 
 
 class Judgement:
-    Win = "WIN"
-    Lose = "LOSE"
+    Win = 'WIN'
+    Lose = 'LOSE'
+    DeemedLose = 'DEEMED_LOSE'
 
 
 class Knockout(Judgement):
-    Neither = "NEITHER"
+    Neither = 'NEITHER'
 
 
 @dataclass
@@ -342,7 +343,7 @@ class Coop:
     boss: BossResult
 
     @property
-    def clean(self) -> bool:
+    def clear(self) -> bool:
         return self.grade_point_diff == Diff.Up
 
 
@@ -436,7 +437,7 @@ class CoopDetail(Coop):
     job_bonus: int
 
     @property
-    def clean(self) -> bool:
+    def clear(self) -> bool:
         return self.result_wave == 0
 
 

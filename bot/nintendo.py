@@ -102,13 +102,7 @@ async def download_image(profile: Profile, url: str) -> bytes:
 
 
 async def test1(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.warning(f'test')
     profile: Profile = context.user_data[UserData.Profiles][context.user_data[UserData.Current]]
-    # data = await battle_detail(profile, "VnNIaXN0b3J5RGV0YWlsLXUtcTRncm9td3dvdDJjdnk1aGFubW06UkVDRU5UOjIwMjMwNDAzVDAxMDE1NF82ZGEzN2RmNy04YmE5LTQ2ZWYtYTU1NC0wZmQ5YjM5OWVhMjI=")
-    # data = await battles(profile)
-    # logger.warning(f'home data = {data}')
-    # with open('regular_battle_detail.json', 'w', encoding='utf-8') as f:
-    #     f.write(data)
     files = [
         'regular_battle_detail.json',
         'challenge_battle_detail.json',
@@ -140,7 +134,18 @@ async def test2(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(text=text)
 
 
+async def test3(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    logger.warning(f'test')
+    profile: Profile = context.user_data[UserData.Profiles][context.user_data[UserData.Current]]
+    data = await battle_detail(profile, "VnNIaXN0b3J5RGV0YWlsLXUtcTRncm9td3dvdDJjdnk1aGFubW06UkVDRU5UOjIwMjMwNDA1VDEyNTU1MV83MzVlYWRmZS04NTkxLTRiN2MtODNlMy1hYjYxMzg1YjdhMWE=")
+    # data = await battles(profile)
+    logger.warning(f'home data = {data}')
+    with open('deemed_lose_battle_detail.json', 'w', encoding='utf-8') as f:
+        f.write(data)
+
+
 handlers = [
     CommandHandler('test1', test1, filters=whitelist_filter),
     CommandHandler('test2', test2, filters=whitelist_filter),
+    CommandHandler('test3', test3, filters=whitelist_filter),
 ]

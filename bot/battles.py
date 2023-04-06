@@ -4,7 +4,7 @@ from typing import Callable
 
 import pytz
 
-from bot.data import BattleDetail, Judgement, Profile, ModeEnum, Team, Player, Award, Rank, Gear, Weapon, BattlePlayerResult, Mode, Battle, Rule, Stage, BattlePlayer, Nameplate, Background, CommonParser
+from bot.data import BattleDetail, Judgement, Profile, ModeEnum, Team, Award, Rank, Gear, BattlePlayerResult, Battle, BattlePlayer, CommonParser
 from bot.utils import format_detail_time
 
 
@@ -44,9 +44,12 @@ class BattleParser:
 
     @staticmethod
     def __team_detail(node) -> Team:
-        score = node['result']['score']
-        if score is None:
-            score = node['result']['paintRatio'] * 100
+        if node['result'] is not None:
+            score = node['result']['score']
+            if score is None:
+                score = node['result']['paintRatio'] * 100
+        else:
+            score = 0.0001
         players = [BattleParser.__player_detail(play) for play in node['players']]
         return Team(
             score=score,
@@ -98,7 +101,7 @@ class BattleParser:
 def _judgement_emoji(text: str) -> str:
     if text == Judgement.Win:
         judgement_emoji = '✅'
-    elif text == Judgement.Lose:
+    elif text == Judgement.Lose or text == Judgement.DeemedLose:
         judgement_emoji = '❌'
     else:
         judgement_emoji = ''
@@ -108,7 +111,7 @@ def _judgement_emoji(text: str) -> str:
 def _message_battle_detail(_: Callable[[str], str], battle: BattleDetail, profile: Profile) -> str:
     if battle.judgement == Judgement.Win:
         judgement_text = _('{judgement_emoji} VICTORY').format(judgement_emoji=_judgement_emoji(battle.judgement))
-    elif battle.judgement == Judgement.Lose:
+    elif battle.judgement == Judgement.Lose or battle.judgement == Judgement.DeemedLose:
         judgement_text = _('{judgement_emoji} DEFEAT').format(judgement_emoji=_judgement_emoji(battle.judgement))
     else:
         judgement_text = ''
@@ -134,23 +137,15 @@ def _message_battle_detail(_: Callable[[str], str], battle: BattleDetail, profil
     count_bar = _message_count_bar(paints)
     teams_text = [_message_team_detail(_, team, name) for name, team in zip(team_names, teams)]
     text = '\n'.join([
-        _('<b>[ {judgement_text} ]</b> {count_bar}'),
-        _('    - Start Time: <code>{start_time}</code>'),
-        _('    - End Time: <code>{end_time}</code>'),
-        _('    - Mode: <code>{mode}</code>'),
-        _('    - Rule: <code>{rule}</code>'),
-        _('    - Stage: <code>{stage}</code>'),
+        _('<b>[ {judgement_text} ]</b> {count_bar}').format(judgement_text=judgement_text, count_bar=count_bar),
+        _('    - Start Time: <code>{start_time}</code>').format(start_time=format_detail_time(battle.start_time.astimezone(pytz.timezone(profile.timezone)))),
+        _('    - End Time: <code>{end_time}</code>').format(end_time=format_detail_time(end_time.astimezone(pytz.timezone(profile.timezone)))),
+        _('    - Mode: <code>{mode}</code>').format(mode=_(ModeEnum.name(battle.mode))),
+        _('    - Rule: <code>{rule}</code>').format(rule=battle.rule.name),
+        _('    - Stage: <code>{stage}</code>').format(stage=battle.stage.name),
         *teams_text,
         _message_awards_detail(_, battle.awards),
-    ]).format(
-        judgement_text=judgement_text,
-        start_time=format_detail_time(battle.start_time.astimezone(pytz.timezone(profile.timezone))),
-        end_time=format_detail_time(end_time.astimezone(pytz.timezone(profile.timezone))),
-        mode=_(ModeEnum.name(battle.mode)),
-        rule=battle.rule.name,
-        stage=battle.stage.name,
-        count_bar=count_bar,
-    )
+    ])
     return text
 
 
@@ -190,31 +185,22 @@ def _score(score: float | int) -> str:
 def _message_team_detail(_: Callable[[str], str], team: Team, team_name: str) -> str:
     players_text = [_message_player_detail(_, play) for play in team.players]
     return '\n'.join([
-        _('<b>[ {judgement_emoji} {team_name} ]</b>'),
+        _('<b>[ {judgement_emoji} {team_name} ]</b>').format(
+            judgement_emoji=_judgement_emoji(team.judgement),
+            team_name=team_name,
+        ),
         *players_text,
-    ]).format(
-        judgement_emoji=_judgement_emoji(team.judgement),
-        team_name=team_name,
-    )
+    ])
 
 
 def _message_player_detail(_: Callable[[str], str], player: BattlePlayer) -> str:
     myself = '  ' if not player.myself else '*'
     return '\n'.join([
-        _('<b>{myself}  [ <code>{name}</code> ]</b>'),
-        _('        - Weapon: <code>{weapon}</code>'),
-        _('        - K(A)/D/SP: <code>{kill}({assist})/{death}/{special}</code>'),
-        _('        - Point: <code>{paint}</code>'),
-    ]).format(
-        myself=myself,
-        name=player.name,
-        weapon=player.weapon.name,
-        paint=player.paint,
-        kill=player.result.kill,
-        assist=player.result.assist,
-        death=player.result.death,
-        special=player.result.special,
-    )
+        _('<b>{myself}  [ <code>{name}</code> ]</b>').format(myself=myself, name=player.name),
+        _('        - Weapon: <code>{weapon}</code>').format(weapon=player.weapon.name),
+        _('        - K(A)/D/SP: <code>{kill}({assist})/{death}/{special}</code>').format(kill=player.result.kill, assist=player.result.assist, death=player.result.death, special=player.result.special),
+        _('        - Point: <code>{paint}</code>').format(paint=player.paint),
+    ])
 
 
 def _award_emoji(text: str) -> str:

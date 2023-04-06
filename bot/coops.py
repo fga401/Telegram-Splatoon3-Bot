@@ -169,28 +169,28 @@ class CoopParser:
         )
 
 
-def _clean_emoji(clean: bool) -> str:
-    if clean:
+def _clear_emoji(clear: bool) -> str:
+    if clear:
         return '✅'
     else:
         return '❌'
 
 
 def _message_coop_detail(_: Callable[[str], str], coop: CoopDetail, profile: Profile) -> str:
-    if coop.clean:
-        judgement_text = _('{clean_emoji} CLEAN').format(clean_emoji=_clean_emoji(coop.clean))
+    if coop.clear:
+        judgement_text = _('{clear_emoji} CLEAR').format(clear_emoji=_clear_emoji(coop.clear))
     else:
-        judgement_text = _('{clean_emoji} DEFEAT').format(clean_emoji=_clean_emoji(coop.clean))
+        judgement_text = _('{clear_emoji} DEFEAT').format(clear_emoji=_clear_emoji(coop.clear))
     smell_bar = _message_smell_bar(coop.smell)
     player_results = [coop.my_result, *coop.member_results]
     text = '\n'.join(filter(lambda s: s is not None, [
-        _('<b>[ {judgement_text} ]</b>  {smell_bar}'),
-        _('    - Start Time: <code>{start_time}</code>'),
-        _('    - Stage: <code>{stage}</code>'),
-        _('    - Hazard Level: <code>{danger}%</code>'),
-        _('    - grade: <code>{grade_name} {grade_point}</code>'),
-        _('    - Point: <code>{job_score} * {job_rate} + {job_bonus} = {job_point}</code>'),
-        _('    - Count:  🟡 <code>{golden_deliver_count}</code>    🟠 <code>{deliver_count}</code>'),
+        _('<b>[ {judgement_text} ]</b>  {smell_bar}').format(judgement_text=judgement_text, smell_bar=smell_bar),
+        _('    - Start Time: <code>{start_time}</code>').format(start_time=format_detail_time(coop.start_time.astimezone(pytz.timezone(profile.timezone)))),
+        _('    - Stage: <code>{stage}</code>').format(stage=coop.stage.name),
+        _('    - Hazard Level: <code>{danger}%</code>').format(danger=f'{int(coop.danger * 100):d}'),
+        _('    - Grade: <code>{grade_name} {grade_point}</code>').format(grade_name=coop.after_grade_name, grade_point=coop.after_grade_point),
+        _('    - Point: <code>{job_score} * {job_rate} + {job_bonus} = {job_point}</code>').format(job_score=coop.job_score, job_rate=coop.job_rate, job_bonus=coop.job_bonus, job_point=coop.job_point),
+        _('    - Count:  🟡 <code>{golden_deliver_count}</code>    🟠 <code>{deliver_count}</code>').format(golden_deliver_count=sum([player.golden_deliver_count for player in player_results]), deliver_count=sum([player.deliver_count for player in player_results])),
         _message_scale_bar(_, coop.scale),
         _('<b>[ Waves ]</b>'),
         *[_message_wave(_, wave, coop.boss, coop.result_wave == 0 or coop.result_wave > wave.wave_number) for wave in coop.wave_results],
@@ -198,16 +198,7 @@ def _message_coop_detail(_: Callable[[str], str], coop: CoopDetail, profile: Pro
         *[_message_player(_, player) for player in player_results],
         _('<b>[ Boss Defeated ]</b>'),
         *[_message_enemy(_, enemy) for enemy in coop.enemy_results],
-    ])).format(
-        judgement_text=judgement_text, smell_bar=smell_bar,
-        start_time=format_detail_time(coop.start_time.astimezone(pytz.timezone(profile.timezone))),
-        stage=coop.stage.name,
-        danger=f'{int(coop.danger * 100):d}',
-        grade_name=coop.after_grade_name, grade_point=coop.after_grade_point,
-        job_score=coop.job_score, job_rate=coop.job_rate, job_bonus=coop.job_bonus, job_point=coop.job_point,
-        golden_deliver_count=sum([player.golden_deliver_count for player in player_results]),
-        deliver_count=sum([player.deliver_count for player in player_results]),
-    )
+    ]))
     return text
 
 
@@ -230,7 +221,7 @@ def _message_scale_bar(_: Callable[[str], str], scale: ScaleResult) -> str | Non
     )
 
 
-def _message_wave(_: Callable[[str], str], wave: WaveResult, boss_result: BossResult, clean: bool) -> str:
+def _message_wave(_: Callable[[str], str], wave: WaveResult, boss_result: BossResult, clear: bool) -> str:
     if wave.wave_number == 4:
         wave_name = 'XTRAWAVE'
         wave_banner = boss_result.boss.name
@@ -254,17 +245,11 @@ def _message_wave(_: Callable[[str], str], wave: WaveResult, boss_result: BossRe
     else:
         event = None
     text = '\n'.join(filter(lambda s: s is not None, [
-        _('    <b>[ {clean_emoji} {wave_name} ]</b>  <code>{wave_banner}</code>'),
-        _('        - Tide: <code>{tide}</code>'),
+        _('    <b>[ {clear_emoji} {wave_name} ]</b>  <code>{wave_banner}</code>').format(clear_emoji=_clear_emoji(clear), wave_name=wave_name, wave_banner=wave_banner),
+        _('        - Tide: <code>{tide}</code>').format(tide=tide, ),
         event,
         _message_wave_sp(_, wave),
-    ])).format(
-        clean_emoji=_clean_emoji(clean),
-        wave_name=wave_name,
-        wave_banner=wave_banner,
-        tide=tide,
-        golden_pop_count=wave.golden_pop_count,
-    )
+    ]))
     return text
 
 
@@ -281,35 +266,26 @@ def _message_wave_sp(_: Callable[[str], str], wave: WaveResult) -> str | None:
 
 def _message_player(_: Callable[[str], str], player: CoopPlayerResult) -> str:
     text = '\n'.join([
-        _('    <b>[ <code>{player_name}</code> ]</b>'),
-        _('        - Boss Defeated: <code>{defeat_enemy_count}</code>'),
-        _('        - Deliver:  🟡 <code>{golden_deliver_count}({golden_assist_count})</code>    🟠 <code>{deliver_count}</code>'),
-        _('        - Rescue:  🛟 <code>{rescue_count}</code>    ☠ <code>{rescued_count}</code>'),
+        _('    <b>[ <code>{player_name}</code> ]</b>').format(player_name=player.player.name),
+        _('        - Boss Defeated: <code>{defeat_enemy_count}</code>').format(defeat_enemy_count=player.defeat_enemy_count),
+        _('        - Deliver:  🟡 <code>{golden_deliver_count}({golden_assist_count})</code>    🟠 <code>{deliver_count}</code>').format(golden_deliver_count=player.golden_deliver_count, golden_assist_count=player.golden_assist_count, deliver_count=player.deliver_count),
+        _('        - Rescue:  🛟 <code>{rescue_count}</code>    ☠ <code>{rescued_count}</code>').format(rescue_count=player.rescue_count, rescued_count=player.rescued_count),
         _('        - Weapons:'),
         *[_('            - <code>{weapon}</code>').format(weapon=weapon.name) for weapon in player.weapons],
-        _('        - Special Weapon: <code>{special_weapon}</code>'),
-    ]).format(
-        player_name=player.player.name,
-        defeat_enemy_count=player.defeat_enemy_count,
-        golden_deliver_count=player.golden_deliver_count,
-        golden_assist_count=player.golden_assist_count,
-        deliver_count=player.deliver_count,
-        rescue_count=player.rescue_count,
-        rescued_count=player.rescued_count,
-        special_weapon=player.special_weapon.name,
-    )
+        _('        - Special Weapon: <code>{special_weapon}</code>').format(special_weapon=player.special_weapon.name),
+    ])
     return text
 
 
 def _message_enemy(_: Callable[[str], str], enemy: EnemyResult) -> str:
     if enemy.team_defeat_count == enemy.pop_count:
-        clean = '  <b>Clean!</b>'
+        clear = '  <b>Clear!</b>'
     else:
-        clean = ''
-    return _('    - <code>{enemy_name}</code>:  <code>{team_defeat_count}({defeat_count})/{pop_count}</code>{clean}').format(
+        clear = ''
+    return _('    - <code>{enemy_name}</code>:  <code>{team_defeat_count}({defeat_count})/{pop_count}</code>{clear}').format(
         enemy_name=enemy.enemy.name,
         team_defeat_count=enemy.team_defeat_count,
         defeat_count=enemy.defeat_count,
         pop_count=enemy.pop_count,
-        clean=clean,
+        clear=clear,
     )
