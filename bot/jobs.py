@@ -126,7 +126,7 @@ async def update_schedule_images_job(context: ContextTypes.DEFAULT_TYPE):
         for p in context.application.user_data[user][UserData.Profiles].values()
     ]
     if len(profiles) == 0:
-        logger.error(f'No profiles for stage query.')
+        raise RuntimeError(f'No profiles for stage query.')
     profile = profiles[0]
 
     resp = await stage_schedule(profile)
