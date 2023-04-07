@@ -3,19 +3,13 @@ import functools
 import json
 import re
 
-import cv2
-import numpy as np
 import requests
 
 import config
 import utils
+from locales import language_map
 from nintendo.login import APP_USER_AGENT, WEBVIEW_VERSION
 from nintendo.utils import ExpiredTokenError, proxies
-
-language_map = {
-    '简体中文': 'zh-CN',
-    'English(US)': 'en-US',
-}
 
 accepted_languages = {
     'de-DE', 'en-GB', 'en-US', 'es-ES', 'es-MX', 'fr-CA', 'fr-FR', 'it-IT', 'ja-JP', 'ko-KR', 'nl-NL', 'ru-RU', 'zh-CN', 'zh-TW'

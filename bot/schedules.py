@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import gettext
 import json
 import logging
 import re
@@ -14,7 +15,7 @@ from telegram.ext import ContextTypes, CommandHandler, Application
 import config
 from bot.data import Schedules, BattleSchedule, CoopSchedule, Stage, BotData, Profile, ModeEnum, RuleEnum, BattleSetting, Rule, Weapon, CoopSetting, CommonParser, Mode
 from bot.nintendo import download_image, stage_schedule
-from bot.utils import whitelist_filter, current_profile, format_schedule_time
+from bot.utils import whitelist_filter, current_profile, format_schedule_time, translator
 from locales import _
 
 logger = logging.getLogger('bot.schedules')
@@ -289,6 +290,7 @@ class BattleQueryFilter:
 
 async def output_battle_schedule(schedule: BattleSchedule, update: Update, context: ContextTypes.DEFAULT_TYPE):
     profile = current_profile(context)
+    _ = translator(profile)
     battle_cache: dict[str, str] = context.bot_data[BotData.BattleImageIDs]
     file_id = battle_cache[battle_key(schedule.setting.stage)]
     text = '\n'.join([
@@ -311,6 +313,7 @@ async def output_battle_schedule(schedule: BattleSchedule, update: Update, conte
 
 async def battle_schedule_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     profile = current_profile(context)
+    _ = translator(profile)
     args = context.args
     if not BattleQueryFilter.validate(args):
         await update.message.reply_text(text=_('Invalid query arguments.\n\n') + _message_battle_schedule_query_instruction(_))
@@ -381,6 +384,7 @@ class CoopQueryFilter:
 
 async def output_coop_schedule(schedule: CoopSchedule, update: Update, context: ContextTypes.DEFAULT_TYPE):
     profile = current_profile(context)
+    _ = translator(profile)
     coop_cache: dict[str, str] = context.bot_data[BotData.CoopImageIDs]
     file_id = coop_cache[coop_key(schedule)]
     if (schedule.start_time - datetime.datetime.now().astimezone(pytz.UTC)).total_seconds() >= 0:
@@ -419,6 +423,7 @@ async def output_coop_schedule(schedule: CoopSchedule, update: Update, context: 
 
 async def coop_schedule_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     profile = current_profile(context)
+    _ = translator(profile)
     args = context.args
     if not CoopQueryFilter.validate(args):
         await update.message.reply_text(text=_('Invalid query arguments.\n\n') + _message_coop_schedule_query_instruction(_))

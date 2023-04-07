@@ -13,7 +13,7 @@ from bot.coops import CoopParser, _message_coop_detail
 from bot.data import BotData, UserData
 from bot.nintendo import home, stage_schedule, battles, battle_detail, coops, coop_detail
 from bot.schedules import update_schedule_image
-from bot.utils import current_profile
+from bot.utils import current_profile, translator
 from locales import _
 
 logger = logging.getLogger('bot.job')
@@ -21,6 +21,7 @@ logger = logging.getLogger('bot.job')
 
 async def monitor_battle(context: ContextTypes.DEFAULT_TYPE):
     profile = current_profile(context, user_id=context.job.user_id)
+    _ = translator(profile)
 
     resp = await battles(profile)
     battle_histories = BattleParser.battle_histories(resp)
@@ -60,6 +61,8 @@ async def monitor_battle(context: ContextTypes.DEFAULT_TYPE):
 
 
 async def monitor_battle_job(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    profile = current_profile(context)
+    _ = translator(profile)
     job_name = f'monitor_{update.message.from_user.id}'
     if context.user_data[UserData.Monitoring]:
         await update.message.reply_text(text=_('Stop monitoring the updates.'))

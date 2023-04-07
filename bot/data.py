@@ -2,7 +2,6 @@ import datetime
 import logging
 from dataclasses import dataclass
 
-from telegram import User
 from telegram.ext import ContextTypes, Application
 
 import config

@@ -1,8 +1,9 @@
 import datetime
+import gettext
 import re
 import sys
 from dataclasses import dataclass
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Callable
 
 from telegram import Message
 from telegram._utils.types import ODVInput
@@ -15,6 +16,7 @@ from telegram.request._requestdata import RequestData
 import config
 import utils
 from bot.data import Profile, UserData
+from locales import language_map
 
 
 class WhitelistFilter(MessageFilter):
@@ -88,7 +90,7 @@ def current_profile(context: ContextTypes.DEFAULT_TYPE, user_id: str = None) -> 
         user_data = context.application.user_data[user_id]
     else:
         user_data = context.user_data
-    return user_data[UserData.Profiles][user_data[UserData.Current]]
+    return user_data[UserData.Profiles].get(user_data[UserData.Current], None)
 
 
 def format_schedule_time(time: datetime.datetime) -> str:
@@ -101,3 +103,10 @@ def format_detail_time(time: datetime.datetime) -> str:
 
 def escaped_html_text(text: str) -> str:
     return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+
+
+def translator(profile: Profile) -> Callable[[str], str]:
+    if profile is None:
+        return gettext.translation('messages', localedir='locales', languages=['en-US']).gettext
+    return gettext.translation('messages', localedir='locales', languages=[language_map[profile.language]]).gettext
+

@@ -12,8 +12,7 @@ import locales
 import nintendo.login
 import nintendo.utils
 from bot.data import UserData, Profile
-from bot.utils import CallbackData, whitelist_filter
-from locales import _
+from bot.utils import CallbackData, whitelist_filter, translator, current_profile
 
 
 class ProfileButtonCallback:
@@ -53,13 +52,14 @@ async def profile_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if query is not None:
         await query.answer()
 
-    current_profile = context.user_data[UserData.Current]
+    _ = translator(current_profile(context))
+    profile_id = context.user_data[UserData.Current]
     profiles: dict[int, Profile] = context.user_data[UserData.Profiles]
     if len(profiles) < 2:
         await profile_manage(update, context)
         return
     profile_keyboard = [
-        [InlineKeyboardButton(_keyboard_profile_name(p.name, p.id == current_profile), callback_data=ProfileButtonCallback.Use.encode(str(p.id)))] for p in sorted(profiles.values(), key=lambda x: x.id)
+        [InlineKeyboardButton(_keyboard_profile_name(p.name, p.id == profile_id), callback_data=ProfileButtonCallback.Use.encode(str(p.id)))] for p in sorted(profiles.values(), key=lambda x: x.id)
     ]
     other_keyboard = [
         [
@@ -82,6 +82,7 @@ async def profile_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def profile_exit(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    _ = translator(current_profile(context))
     await query.edit_message_text(_('Exited profile settings.'))
 
 
@@ -89,10 +90,11 @@ async def profile_manage(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     if query is not None:
         await query.answer()
-    current_profile = context.user_data[UserData.Current]
+    _ = translator(current_profile(context))
+    profile_id = context.user_data[UserData.Current]
     profiles: dict[int, Profile] = context.user_data[UserData.Profiles]
     profile_keyboard = [
-        [InlineKeyboardButton(_keyboard_profile_name(p.name, p.id == current_profile), callback_data=ProfileButtonCallback.Detail.encode(str(p.id)))] for p in sorted(profiles.values(), key=lambda x: x.id)
+        [InlineKeyboardButton(_keyboard_profile_name(p.name, p.id == profile_id), callback_data=ProfileButtonCallback.Detail.encode(str(p.id)))] for p in sorted(profiles.values(), key=lambda x: x.id)
     ]
     other_keyboard = [[]]
     if len(profiles) == 0:
@@ -120,6 +122,7 @@ async def profile_manage(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def profile_detail(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
+    _ = translator(current_profile(context))
     profile_id: int = int(ProfileButtonCallback.Detail.decode(query.data))
     profile: Profile = context.user_data[UserData.Profiles][profile_id]
     keyboard = [
@@ -136,6 +139,7 @@ async def profile_add(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
     query = update.callback_query
     if query is not None:
         await query.answer()
+    _ = translator(current_profile(context))
 
     keyboard = [
         [
@@ -167,6 +171,7 @@ async def profile_add(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int
 
 
 async def profile_input_name(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    _ = translator(current_profile(context))
     profile_name = update.message.text
     profiles: dict[int, Profile] = context.user_data[UserData.Profiles]
     existed_profile_names = {profile.name for profile in profiles.values()}
@@ -201,6 +206,7 @@ async def profile_input_name(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 
 async def profile_input_link(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    _ = translator(current_profile(context))
     message = await update.message.reply_text(text=_('Processing your link...'))
 
     link = update.message.text
@@ -239,6 +245,7 @@ async def profile_input_link(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def profile_input_language(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     await query.answer()
+    _ = translator(current_profile(context))
     language = ProfileButtonCallback.Language.decode(query.data)
     context.user_data[UserData.Pending].language = language
 
@@ -258,6 +265,7 @@ async def profile_input_language(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def profile_input_timezone(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    _ = translator(current_profile(context))
     timezone = update.message.text
     try:
         pytz.timezone(timezone)
@@ -302,6 +310,7 @@ def __create_profile(context: ContextTypes.DEFAULT_TYPE) -> Union[int, str]:
     """
     return new profile id if success, else return reason of failure.
     """
+    _ = translator(current_profile(context))
     profiles: dict[int, Profile] = context.user_data[UserData.Profiles]
     if len(profiles) >= config.get(config.APP_MAX_PROFILE):
         return _('The number of profiles has reached the limit.')
@@ -319,6 +328,7 @@ def __create_profile(context: ContextTypes.DEFAULT_TYPE) -> Union[int, str]:
 
 
 async def profile_input_timeout(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    _ = translator(current_profile(context))
     keyboard = [
         [
             InlineKeyboardButton(text=_('« Go Back'), callback_data=ProfileButtonCallback.Manage),
@@ -333,6 +343,7 @@ async def profile_input_timeout(update: Update, context: ContextTypes.DEFAULT_TY
 async def profile_use(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
+    _ = translator(current_profile(context))
     profile_id: int = int(ProfileButtonCallback.Use.decode(query.data))
     context.user_data[UserData.Current] = profile_id
     profile = context.user_data[UserData.Profiles][profile_id]
@@ -348,6 +359,7 @@ async def profile_use(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 async def profile_delete(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
+    _ = translator(current_profile(context))
     deleted_profile_id: int = int(ProfileButtonCallback.Delete.decode(query.data))
     deleted_profile: Profile = context.user_data[UserData.Profiles][deleted_profile_id]
     del context.user_data[UserData.Profiles][deleted_profile_id]

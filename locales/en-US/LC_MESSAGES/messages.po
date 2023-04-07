@@ -1,0 +1,657 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2023-04-06 08:58+0800\n"
+"PO-Revision-Date: 2023-04-07 09:24+0800\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 3.2.2\n"
+
+#: .\bot\admin.py:22
+msgid "Force Update Schedules"
+msgstr ""
+
+#: .\bot\admin.py:25 .\bot\profiles.py:66 .\bot\profiles.py:103
+#: .\bot\profiles.py:105 .\bot\profiles.py:142 .\bot\profiles.py:289
+#: .\bot\profiles.py:324 .\bot\profiles.py:341 .\bot\profiles.py:362
+msgid "« Go Back"
+msgstr ""
+
+#: .\bot\admin.py:29
+msgid "Admin Options:"
+msgstr ""
+
+#: .\bot\admin.py:35
+msgid "Exited admin settings."
+msgstr ""
+
+#: .\bot\admin.py:42
+msgid "Updating schedules..."
+msgstr ""
+
+#: .\bot\admin.py:47
+msgid "Schedules have been updated."
+msgstr ""
+
+#: .\bot\battles.py:113
+msgid "{judgement_emoji} VICTORY"
+msgstr ""
+
+#: .\bot\battles.py:115
+msgid "{judgement_emoji} DEFEAT"
+msgstr ""
+
+#: .\bot\battles.py:126 .\bot\battles.py:127
+msgid "Attacking"
+msgstr ""
+
+#: .\bot\battles.py:128
+msgid "Defending"
+msgstr ""
+
+#: .\bot\battles.py:134
+msgid "My Team"
+msgstr ""
+
+#: .\bot\battles.py:135
+msgid "Other Team"
+msgstr ""
+
+#: .\bot\battles.py:140
+msgid "<b>[ {judgement_text} ]</b> {count_bar}"
+msgstr ""
+
+#: .\bot\battles.py:141 .\bot\coops.py:188
+msgid "    - Start Time: <code>{start_time}</code>"
+msgstr ""
+
+#: .\bot\battles.py:142
+msgid "    - End Time: <code>{end_time}</code>"
+msgstr ""
+
+#: .\bot\battles.py:143
+msgid "    - Mode: <code>{mode}</code>"
+msgstr ""
+
+#: .\bot\battles.py:144
+msgid "    - Rule: <code>{rule}</code>"
+msgstr ""
+
+#: .\bot\battles.py:145 .\bot\coops.py:189
+msgid "    - Stage: <code>{stage}</code>"
+msgstr ""
+
+#: .\bot\battles.py:196
+msgid "<b>[ {judgement_emoji} {team_name} ]</b>"
+msgstr ""
+
+#: .\bot\battles.py:207
+msgid "<b>{myself}  [ <code>{name}</code> ]</b>"
+msgstr ""
+
+#: .\bot\battles.py:208
+msgid "        - Weapon: <code>{weapon}</code>"
+msgstr ""
+
+#: .\bot\battles.py:209
+msgid "        - K(A)/D/SP: <code>{kill}({assist})/{death}/{special}</code>"
+msgstr ""
+
+#: .\bot\battles.py:210
+msgid "        - Point: <code>{paint}</code>"
+msgstr ""
+
+#: .\bot\battles.py:239
+msgid "<b>[ Award ]</b>"
+msgstr ""
+
+#: .\bot\coops.py:181
+msgid "{clear_emoji} CLEAR"
+msgstr ""
+
+#: .\bot\coops.py:183
+msgid "{clear_emoji} DEFEAT"
+msgstr ""
+
+#: .\bot\coops.py:187
+msgid "<b>[ {judgement_text} ]</b>  {smell_bar}"
+msgstr ""
+
+#: .\bot\coops.py:190
+msgid "    - Hazard Level: <code>{danger}%</code>"
+msgstr ""
+
+#: .\bot\coops.py:191
+msgid "    - Grade: <code>{grade_name} {grade_point}</code>"
+msgstr ""
+
+#: .\bot\coops.py:192
+msgid ""
+"    - Point: <code>{job_score} * {job_rate} + {job_bonus} = {job_point}</"
+"code>"
+msgstr ""
+
+#: .\bot\coops.py:193
+msgid ""
+"    - Count:  🟡 <code>{golden_deliver_count}</code>    🟠 "
+"<code>{deliver_count}</code>"
+msgstr ""
+
+#: .\bot\coops.py:195
+msgid "<b>[ Waves ]</b>"
+msgstr ""
+
+#: .\bot\coops.py:197
+msgid "<b>[ Team ]</b>"
+msgstr ""
+
+#: .\bot\coops.py:199
+msgid "<b>[ Boss Defeated ]</b>"
+msgstr ""
+
+#: .\bot\coops.py:226
+msgid ""
+"    - Scale:  🥉 <code>{bronze}</code>    🥈 <code>{silver}</code>    🥇 "
+"<code>{gold}</code>"
+msgstr ""
+
+#: .\bot\coops.py:238
+msgid "Wave {wave_number}"
+msgstr ""
+
+#: .\bot\coops.py:245
+msgid "High Tide"
+msgstr ""
+
+#: .\bot\coops.py:247
+msgid "Normal Tide"
+msgstr ""
+
+#: .\bot\coops.py:249
+msgid "Low Tide"
+msgstr ""
+
+#: .\bot\coops.py:253
+msgid "        - Event: <code>{event}</code>"
+msgstr ""
+
+#: .\bot\coops.py:257
+msgid "    <b>[ {clear_emoji} {wave_name} ]</b>  <code>{wave_banner}</code>"
+msgstr ""
+
+#: .\bot\coops.py:258
+msgid "        - Tide: <code>{tide}</code>"
+msgstr ""
+
+#: .\bot\coops.py:276
+msgid "        - Special Weapons:"
+msgstr ""
+
+#: .\bot\coops.py:277
+msgid "            - <code>{sp}</code>{cnt}"
+msgstr ""
+
+#: .\bot\coops.py:284
+msgid "    <b>[ <code>{player_name}</code> ]</b>"
+msgstr ""
+
+#: .\bot\coops.py:285
+msgid "        - Boss Defeated: <code>{defeat_enemy_count}</code>"
+msgstr ""
+
+#: .\bot\coops.py:286
+msgid ""
+"        - Deliver:  🟡 <code>{golden_deliver_count}({golden_assist_count})</"
+"code>    🟠 <code>{deliver_count}</code>"
+msgstr ""
+
+#: .\bot\coops.py:287
+msgid ""
+"        - Rescue:  🛟 <code>{rescue_count}</code>    ☠ <code>{rescued_count}"
+"</code>"
+msgstr ""
+
+#: .\bot\coops.py:288
+msgid "        - Weapons:"
+msgstr ""
+
+#: .\bot\coops.py:289
+msgid "            - <code>{weapon}</code>"
+msgstr ""
+
+#: .\bot\coops.py:290
+msgid "        - Special Weapon: <code>{special_weapon}</code>"
+msgstr ""
+
+#: .\bot\coops.py:309
+msgid ""
+"    - <code>{enemy_name}</code>:  <code>{team_defeat_count}({defeat_count})/"
+"{pop_count}</code>{clear}"
+msgstr ""
+
+#: .\bot\data.py:75
+msgid "TurfWar"
+msgstr "Turf War"
+
+#: .\bot\data.py:76
+msgid "Goal"
+msgstr "Tower Control"
+
+#: .\bot\data.py:77
+msgid "Area"
+msgstr "Splat Zones"
+
+#: .\bot\data.py:78
+msgid "Loft"
+msgstr "Rainmaker"
+
+#: .\bot\data.py:79
+msgid "Clam"
+msgstr "Clam Blitz"
+
+#: .\bot\data.py:128
+msgid "Regular"
+msgstr "Regular Battle"
+
+#: .\bot\data.py:129
+msgid "Challenge"
+msgstr "Anarchy Battle (Series)"
+
+#: .\bot\data.py:130
+msgid "Open"
+msgstr "Anarchy Battle (Open)"
+
+#: .\bot\data.py:131
+msgid "X"
+msgstr "X Battle"
+
+#: .\bot\data.py:132
+msgid "Fest"
+msgstr "Splatfest Battle"
+
+#: .\bot\data.py:133
+msgid "FestOpen"
+msgstr "Splatfest Battle (Open)"
+
+#: .\bot\data.py:134
+msgid "FestChallenge"
+msgstr "Splatfest Battle (Pro)"
+
+#: .\bot\data.py:135
+msgid "FestTriColor"
+msgstr "TriColor Battle"
+
+#: .\bot\data.py:136
+msgid "Private"
+msgstr "Private Battle"
+
+#: .\bot\jobs.py:65
+msgid "Stop monitoring the updates."
+msgstr ""
+
+#: .\bot\jobs.py:71
+msgid "Start monitoring the updates."
+msgstr ""
+
+#: .\bot\profiles.py:67
+msgid "Manage Profile »"
+msgstr ""
+
+#: .\bot\profiles.py:73
+msgid "Choose your new profile."
+msgstr ""
+
+#: .\bot\profiles.py:73 .\bot\profiles.py:101
+msgid "Here are your profiles ({cnt}/{max}). "
+msgstr ""
+
+#: .\bot\profiles.py:85
+msgid "Exited profile settings."
+msgstr ""
+
+#: .\bot\profiles.py:99
+msgid "You don't have any profile. Would you like to add one?"
+msgstr ""
+
+#: .\bot\profiles.py:101
+msgid "Choose a profile to delete, or add a new profile."
+msgstr ""
+
+#: .\bot\profiles.py:107
+msgid "Add Profile »"
+msgstr ""
+
+#: .\bot\profiles.py:127
+msgid "« No"
+msgstr ""
+
+#: .\bot\profiles.py:128
+msgid "Yes »"
+msgstr ""
+
+#: .\bot\profiles.py:132
+msgid "Are you sure to delete this profile?"
+msgstr ""
+
+#: .\bot\profiles.py:149 .\bot\profiles.py:151 .\bot\profiles.py:307
+msgid "The number of profiles has reached the limit."
+msgstr ""
+
+#: .\bot\profiles.py:156 .\bot\profiles.py:177 .\bot\profiles.py:194
+#: .\bot\profiles.py:231 .\bot\profiles.py:251 .\bot\profiles.py:271
+msgid "« Cancel"
+msgstr ""
+
+#: .\bot\profiles.py:160
+msgid "Please input the <b>[Profile Name]</b>.\n"
+msgstr ""
+
+#: .\bot\profiles.py:181
+msgid ""
+"Profile <code>{profile_name}</code> already existed. Please input a new "
+"name.\n"
+msgstr ""
+
+#: .\bot\profiles.py:188
+msgid "You input the Profile Name: <b>[{profile_name}]</b>."
+msgstr ""
+
+#: .\bot\profiles.py:191
+msgid "Login"
+msgstr ""
+
+#: .\bot\profiles.py:198
+msgid ""
+"Please open the <b>[Login]</b> page, copy the link of <b>[Select this "
+"account]</b> and send it here.\n"
+msgstr ""
+
+#: .\bot\profiles.py:204
+msgid "Processing your link..."
+msgstr ""
+
+#: .\bot\profiles.py:214
+msgid ""
+"Failed to get your Nintendo token. Please retry.\n"
+"error = {error}"
+msgstr ""
+
+#: .\bot\profiles.py:225
+msgid "Your account is <b>[{user_nickname}]</b>."
+msgstr ""
+
+#: .\bot\profiles.py:235
+msgid "Please choose your preferred <b>[Language]</b>.\n"
+msgstr ""
+
+#: .\bot\profiles.py:245
+msgid "You chose preferred Language: <b>[{language}]</b>."
+msgstr ""
+
+#: .\bot\profiles.py:248 .\bot\profiles.py:268
+msgid "Timezone Identifiers"
+msgstr ""
+
+#: .\bot\profiles.py:255
+msgid ""
+"Please ipnut the <b>[Timezone]</b>. You can find all timezone identifiers in "
+"the below link.\n"
+msgstr ""
+
+#: .\bot\profiles.py:275
+msgid "Unknown timezone. Please input a new timezone.\n"
+msgstr ""
+
+#: .\bot\profiles.py:282
+msgid "You input the Timezone: <b>[{timezone}]</b>."
+msgstr ""
+
+#: .\bot\profiles.py:295
+msgid "Profile was added."
+msgstr ""
+
+#: .\bot\profiles.py:297
+msgid "Failed to add profile. {error}"
+msgstr ""
+
+#: .\bot\profiles.py:329
+msgid "No input for a while. Adding profile has been canceled."
+msgstr ""
+
+#: .\bot\profiles.py:345
+msgid "Current profile is <code>{profile_name}</code>."
+msgstr ""
+
+#: .\bot\profiles.py:366
+msgid "Profile <code>{profile_name}</code> was deleted."
+msgstr ""
+
+#: .\bot\profiles.py:372
+msgid " Current profile is <code>{profile_name}</code>."
+msgstr ""
+
+#: .\bot\profiles.py:385
+msgid "    - Profile Name = <code>{profile_name}</code>"
+msgstr ""
+
+#: .\bot\profiles.py:386
+msgid "    - Account Name = <code>{account_name}</code>"
+msgstr ""
+
+#: .\bot\profiles.py:387
+msgid "    - Country = <code>{country}</code>"
+msgstr ""
+
+#: .\bot\profiles.py:388
+msgid "    - Language = <code>{language}</code>"
+msgstr ""
+
+#: .\bot\profiles.py:389
+msgid "    - Timezone = <code>{timezone}</code>"
+msgstr ""
+
+#: .\bot\profiles.py:401
+msgid "    - format: <code>.{1,20}</code>"
+msgstr ""
+
+#: .\bot\profiles.py:402
+msgid "    - example: <code>工</code>, <code>MyProfile</code>"
+msgstr ""
+
+#: .\bot\profiles.py:408 .\bot\schedules.py:346 .\bot\schedules.py:441
+msgid "Example:"
+msgstr ""
+
+#: .\bot\profiles.py:409
+msgid "    - <code>Asia/Shanghai</code>"
+msgstr ""
+
+#: .\bot\profiles.py:410
+msgid "    - <code>Europe/London</code>"
+msgstr ""
+
+#: .\bot\profiles.py:411
+msgid "    - <code>Asia/Tokyo</code>"
+msgstr ""
+
+#: .\bot\schedules.py:295 .\bot\schedules.py:399
+msgid "Time: <code>{start_time}</code> ~ <code>{end_time}</code>"
+msgstr ""
+
+#: .\bot\schedules.py:296
+msgid "Mode: <code>{mode}</code>"
+msgstr ""
+
+#: .\bot\schedules.py:297
+msgid "Stage:"
+msgstr ""
+
+#: .\bot\schedules.py:298
+msgid "    - <code>{stage_1}</code>"
+msgstr ""
+
+#: .\bot\schedules.py:299
+msgid "    - <code>{stage_2}</code>"
+msgstr ""
+
+#: .\bot\schedules.py:300
+msgid "Rule: <code>{rule}</code>"
+msgstr ""
+
+#: .\bot\schedules.py:316 .\bot\schedules.py:424
+msgid ""
+"Invalid query arguments.\n"
+"\n"
+msgstr ""
+
+#: .\bot\schedules.py:323 .\bot\schedules.py:431
+msgid "No matching schedules after filtering."
+msgstr ""
+
+#: .\bot\schedules.py:330
+msgid "Parameters: [MODE] [RULE] [TIME]"
+msgstr ""
+
+#: .\bot\schedules.py:331
+msgid "[MODE]"
+msgstr ""
+
+#: .\bot\schedules.py:332
+msgid "    - r: {regular}"
+msgstr ""
+
+#: .\bot\schedules.py:333
+msgid "    - c: {challenge}"
+msgstr ""
+
+#: .\bot\schedules.py:334
+msgid "    - o: {open}"
+msgstr ""
+
+#: .\bot\schedules.py:335
+msgid "    - x: {x}"
+msgstr ""
+
+#: .\bot\schedules.py:336
+msgid "    - fest: {fest}"
+msgstr ""
+
+#: .\bot\schedules.py:337
+msgid "[RULE]"
+msgstr ""
+
+#: .\bot\schedules.py:338
+msgid "    - t: {turf_war}"
+msgstr ""
+
+#: .\bot\schedules.py:339
+msgid "    - a: {area}"
+msgstr ""
+
+#: .\bot\schedules.py:340
+msgid "    - l: {loft}"
+msgstr ""
+
+#: .\bot\schedules.py:341
+msgid "    - g: {goal}"
+msgstr ""
+
+#: .\bot\schedules.py:342
+msgid "    - c: {clam}"
+msgstr ""
+
+#: .\bot\schedules.py:343
+msgid "[TIME]"
+msgstr ""
+
+#: .\bot\schedules.py:344 .\bot\schedules.py:440
+msgid "    - N: Next N Schedules"
+msgstr ""
+
+#: .\bot\schedules.py:345
+msgid "    - X Y: Schedules between X and Y"
+msgstr ""
+
+#: .\bot\schedules.py:347
+msgid "    - /schedules: Default arguments. Next 2 schedules for all modes."
+msgstr ""
+
+#: .\bot\schedules.py:348
+msgid "    - /schedules o 20 24: {open} schedules between 20:00 and 24:00."
+msgstr ""
+
+#: .\bot\schedules.py:349
+msgid ""
+"    - /schedules x a 2: {x} schedules with {area} in next 4 hours if "
+"existing."
+msgstr ""
+
+#: .\bot\schedules.py:388
+msgid "Job will start in {time}."
+msgstr ""
+
+#: .\bot\schedules.py:391
+msgid "Job will be over in {time}."
+msgstr ""
+
+#: .\bot\schedules.py:395
+msgid "{minute}m"
+msgstr ""
+
+#: .\bot\schedules.py:397
+msgid "{hour}h {minute}m"
+msgstr ""
+
+#: .\bot\schedules.py:400
+msgid "Stage: <code>{stage}</code>"
+msgstr ""
+
+#: .\bot\schedules.py:401
+msgid "Weapon:"
+msgstr ""
+
+#: .\bot\schedules.py:402
+msgid "    - <code>{weapon_1}</code>"
+msgstr ""
+
+#: .\bot\schedules.py:403
+msgid "    - <code>{weapon_2}</code>"
+msgstr ""
+
+#: .\bot\schedules.py:404
+msgid "    - <code>{weapon_3}</code>"
+msgstr ""
+
+#: .\bot\schedules.py:405
+msgid "    - <code>{weapon_4}</code>"
+msgstr ""
+
+#: .\bot\schedules.py:406
+msgid "{remaining_text}"
+msgstr ""
+
+#: .\bot\schedules.py:438
+msgid "Parameters: [Next]"
+msgstr ""
+
+#: .\bot\schedules.py:439
+msgid "[Next]"
+msgstr ""
+
+#: .\bot\schedules.py:442
+msgid "    - /schedules: Default arguments. Next 2 schedules."
+msgstr ""
+
+#: .\bot\schedules.py:443
+msgid "    - /schedules 3: Next 3 schedules."
+msgstr ""
