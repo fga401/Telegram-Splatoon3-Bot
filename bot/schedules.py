@@ -12,7 +12,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler, Application
 
 import config
-from bot.data import Schedules, BattleSchedule, CoopSchedule, Stage, BotData, Profile, ModeEnum, RuleEnum, BattleSetting, Rule, Weapon, CoopSetting, CommonParser
+from bot.data import Schedules, BattleSchedule, CoopSchedule, Stage, BotData, Profile, ModeEnum, RuleEnum, BattleSetting, Rule, Weapon, CoopSetting, CommonParser, Mode
 from bot.nintendo import download_image, stage_schedule
 from bot.utils import whitelist_filter, current_profile, format_schedule_time
 from locales import _
@@ -26,7 +26,7 @@ class ScheduleParser:
         data = json.loads(schedules)
         regular_schedules = [
             BattleSchedule(
-                setting=ScheduleParser.__setting(node['regularMatchSetting']),
+                setting=ScheduleParser.__setting(node['regularMatchSetting'], ModeEnum.Regular),
                 start_time=datetime.datetime.fromisoformat(node['startTime']),
                 end_time=datetime.datetime.fromisoformat(node['endTime']),
             )
@@ -34,7 +34,7 @@ class ScheduleParser:
         ]
         challenge_schedules = [
             BattleSchedule(
-                setting=ScheduleParser.__setting(node['bankaraMatchSettings'][0]),
+                setting=ScheduleParser.__setting(node['bankaraMatchSettings'][0], ModeEnum.Challenge),
                 start_time=datetime.datetime.fromisoformat(node['startTime']),
                 end_time=datetime.datetime.fromisoformat(node['endTime']),
             )
@@ -42,7 +42,7 @@ class ScheduleParser:
         ]
         open_schedules = [
             BattleSchedule(
-                setting=ScheduleParser.__setting(node['bankaraMatchSettings'][1]),
+                setting=ScheduleParser.__setting(node['bankaraMatchSettings'][1], ModeEnum.Open),
                 start_time=datetime.datetime.fromisoformat(node['startTime']),
                 end_time=datetime.datetime.fromisoformat(node['endTime']),
             )
@@ -50,7 +50,7 @@ class ScheduleParser:
         ]
         x_schedules = [
             BattleSchedule(
-                setting=ScheduleParser.__setting(node['xMatchSetting']),
+                setting=ScheduleParser.__setting(node['xMatchSetting'], ModeEnum.X),
                 start_time=datetime.datetime.fromisoformat(node['startTime']),
                 end_time=datetime.datetime.fromisoformat(node['endTime']),
             )
@@ -58,7 +58,7 @@ class ScheduleParser:
         ]
         fest_schedules = [
             BattleSchedule(
-                setting=ScheduleParser.__setting(node['festMatchSetting']),
+                setting=ScheduleParser.__setting(node['festMatchSetting'], ModeEnum.Fest),
                 start_time=datetime.datetime.fromisoformat(node['startTime']),
                 end_time=datetime.datetime.fromisoformat(node['endTime']),
             )
@@ -99,10 +99,10 @@ class ScheduleParser:
         ]
 
     @staticmethod
-    def __setting(node) -> BattleSetting:
+    def __setting(node, mode: Mode) -> BattleSetting:
         return BattleSetting(
             rule=CommonParser.rule(node['vsRule']),
-            mode=ModeEnum.Fest,
+            mode=mode,
             stage=(
                 CommonParser.stage(node['vsStages'][0]),
                 CommonParser.stage(node['vsStages'][1]),
@@ -206,7 +206,7 @@ async def update_schedule_image(data: str, profile: Profile, context: ContextTyp
 
 
 class BattleQueryFilter:
-    regexp = r'([rcox]+( [talgc]+)?)?( |$)(\d{1,2}( \d{0,2})?)?'
+    regexp = r'([rcox]+( [talgc]+)?)?( |^)(\d{1,2}( \d{0,2})?)?'
     __compiled = re.compile(regexp)
 
     @staticmethod
@@ -348,11 +348,11 @@ def _message_battle_schedule_query_instruction(_: Callable[[str], str]):
         _('    - /schedules o 20 24: {open} schedules between 20:00 and 24:00.'),
         _('    - /schedules x a 2: {x} schedules with {area} in next 4 hours if existing.'),
     ]).format(
-        regular=_(ModeEnum.Regular.name),
-        challenge=_(ModeEnum.Challenge.name),
-        open=_(ModeEnum.Open.name),
-        x=_(ModeEnum.X.name),
-        fest=_(ModeEnum.Fest.name),
+        regular=_(ModeEnum.name(ModeEnum.Regular)),
+        challenge=_(ModeEnum.name(ModeEnum.Challenge)),
+        open=_(ModeEnum.name(ModeEnum.Open)),
+        x=_(ModeEnum.name(ModeEnum.X)),
+        fest=_(ModeEnum.name(ModeEnum.Fest)),
         turf_war=_(RuleEnum.TurfWar.name),
         area=_(RuleEnum.Area.name),
         loft=_(RuleEnum.Loft.name),

@@ -97,3 +97,7 @@ def format_schedule_time(time: datetime.datetime) -> str:
 
 def format_detail_time(time: datetime.datetime) -> str:
     return time.strftime('%Y-%m-%d %H:%M:%S')
+
+
+def escaped_html_text(text: str) -> str:
+    return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
