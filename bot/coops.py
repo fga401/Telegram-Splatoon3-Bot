@@ -1,5 +1,6 @@
 import collections
 import datetime
+import html
 import json
 from typing import Callable
 
@@ -266,7 +267,7 @@ def _message_wave_sp(_: Callable[[str], str], wave: WaveResult) -> str | None:
 
 def _message_player(_: Callable[[str], str], player: CoopPlayerResult) -> str:
     text = '\n'.join([
-        _('    <b>[ <code>{player_name}</code> ]</b>').format(player_name=player.player.name),
+        _('    <b>[ <code>{player_name}</code> ]</b>').format(player_name=html.escape(player.player.name)),
         _('        - Boss Defeated: <code>{defeat_enemy_count}</code>').format(defeat_enemy_count=player.defeat_enemy_count),
         _('        - Deliver:  🟡 <code>{golden_deliver_count}({golden_assist_count})</code>    🟠 <code>{deliver_count}</code>').format(golden_deliver_count=player.golden_deliver_count, golden_assist_count=player.golden_assist_count, deliver_count=player.deliver_count),
         _('        - Rescue:  🛟 <code>{rescue_count}</code>    ☠ <code>{rescued_count}</code>').format(rescue_count=player.rescue_count, rescued_count=player.rescued_count),

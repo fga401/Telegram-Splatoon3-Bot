@@ -1,4 +1,5 @@
 import datetime
+import html
 import json
 from typing import Callable
 
@@ -196,7 +197,7 @@ def _message_team_detail(_: Callable[[str], str], team: Team, team_name: str) ->
 def _message_player_detail(_: Callable[[str], str], player: BattlePlayer) -> str:
     myself = '  ' if not player.myself else '*'
     return '\n'.join([
-        _('<b>{myself}  [ <code>{name}</code> ]</b>').format(myself=myself, name=player.name),
+        _('<b>{myself}  [ <code>{name}</code> ]</b>').format(myself=myself, name=html.escape(player.name)),
         _('        - Weapon: <code>{weapon}</code>').format(weapon=player.weapon.name),
         _('        - K(A)/D/SP: <code>{kill}({assist})/{death}/{special}</code>').format(kill=player.result.kill, assist=player.result.assist, death=player.result.death, special=player.result.special),
         _('        - Point: <code>{paint}</code>').format(paint=player.paint),
