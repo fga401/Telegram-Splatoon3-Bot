@@ -1,7 +1,9 @@
 import datetime
 import logging
 from dataclasses import dataclass
+from typing import Union
 
+import pytz
 from telegram.ext import ContextTypes, Application
 
 import config
@@ -250,7 +252,7 @@ class Background:
 @dataclass
 class Nameplate:
     background: Background
-    badges: list[Badge | None]
+    badges: list[Union[Badge, None]]
 
 
 @dataclass
@@ -285,7 +287,7 @@ class Battle:
 
 @dataclass
 class Team:
-    score: float | int
+    score: Union[float, int]
     tricolor_role: str
     judgement: str
     players: list[BattlePlayer]
@@ -336,7 +338,7 @@ class Coop:
     id: str
     after_grade_name: str
     after_grade_point: int
-    grade_point_diff: str | None
+    grade_point_diff: Union[str, None]
     stage: Stage
     weapons: list[Weapon]
     boss: BossResult
@@ -442,7 +444,7 @@ class CoopDetail(Coop):
 
 class CommonParser:
     @staticmethod
-    def badge(node) -> Badge | None:
+    def badge(node) -> Union[Badge, None]:
         if node is None:
             return None
         return Badge(
@@ -503,6 +505,10 @@ class CommonParser:
             id=node['id'],
             mode=node['mode'],
         )
+
+    @staticmethod
+    def datetime(text: str) -> datetime.datetime:
+        return datetime.datetime.strptime(text, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=pytz.UTC)
 
 
 async def _init_bot_data(context: ContextTypes.DEFAULT_TYPE):

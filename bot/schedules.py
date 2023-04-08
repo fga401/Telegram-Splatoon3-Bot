@@ -28,40 +28,40 @@ class ScheduleParser:
         regular_schedules = [
             BattleSchedule(
                 setting=ScheduleParser.__setting(node['regularMatchSetting'], ModeEnum.Regular),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
+                start_time=CommonParser.datetime(node['startTime']),
+                end_time=CommonParser.datetime(node['endTime']),
             )
             for node in data['data']['regularSchedules']['nodes'] if node['regularMatchSetting'] is not None
         ]
         challenge_schedules = [
             BattleSchedule(
                 setting=ScheduleParser.__setting(node['bankaraMatchSettings'][0], ModeEnum.Challenge),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
+                start_time=CommonParser.datetime(node['startTime']),
+                end_time=CommonParser.datetime(node['endTime']),
             )
             for node in data['data']['bankaraSchedules']['nodes'] if node['bankaraMatchSettings'] is not None
         ]
         open_schedules = [
             BattleSchedule(
                 setting=ScheduleParser.__setting(node['bankaraMatchSettings'][1], ModeEnum.Open),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
+                start_time=CommonParser.datetime(node['startTime']),
+                end_time=CommonParser.datetime(node['endTime']),
             )
             for node in data['data']['bankaraSchedules']['nodes'] if node['bankaraMatchSettings'] is not None
         ]
         x_schedules = [
             BattleSchedule(
                 setting=ScheduleParser.__setting(node['xMatchSetting'], ModeEnum.X),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
+                start_time=CommonParser.datetime(node['startTime']),
+                end_time=CommonParser.datetime(node['endTime']),
             )
             for node in data['data']['xSchedules']['nodes'] if node['xMatchSetting'] is not None
         ]
         fest_schedules = [
             BattleSchedule(
                 setting=ScheduleParser.__setting(node['festMatchSetting'], ModeEnum.Fest),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
+                start_time=CommonParser.datetime(node['startTime']),
+                end_time=CommonParser.datetime(node['endTime']),
             )
             for node in data['data']['festSchedules']['nodes'] if node['festMatchSetting'] is not None
         ]
@@ -76,8 +76,8 @@ class ScheduleParser:
                         CommonParser.weapon(node['setting']['weapons'][3]),
                     )
                 ),
-                start_time=datetime.datetime.fromisoformat(node['startTime']),
-                end_time=datetime.datetime.fromisoformat(node['endTime']),
+                start_time=CommonParser.datetime(node['startTime']),
+                end_time=CommonParser.datetime(node['endTime']),
             )
             for node in data['data']['coopGroupingSchedule']['regularSchedules']['nodes']
         ]

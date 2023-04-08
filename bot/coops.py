@@ -2,7 +2,7 @@ import collections
 import datetime
 import html
 import json
-from typing import Callable
+from typing import Callable, Union
 
 import pytz
 
@@ -68,7 +68,7 @@ class CoopParser:
                 )
                 for result in node['enemyResults']
             ],
-            start_time=datetime.datetime.fromisoformat(node['playedTime']),
+            start_time=CommonParser.datetime(node['playedTime']),
             rule=node['rule'],
             danger=node['dangerRate'],
             smell=node['smellMeter'],
@@ -80,7 +80,7 @@ class CoopParser:
         )
 
     @staticmethod
-    def __boss_result(node) -> BossResult | None:
+    def __boss_result(node) -> Union[BossResult, None]:
         if node is None:
             return None
         if 'image' in node['boss']:
@@ -160,7 +160,7 @@ class CoopParser:
         )
 
     @staticmethod
-    def __scale_result(node) -> ScaleResult | None:
+    def __scale_result(node) -> Union[ScaleResult, None]:
         if node is None:
             return None
         return ScaleResult(
@@ -212,7 +212,7 @@ def _message_smell_bar(smell: int) -> str:
     )
 
 
-def _message_scale_bar(_: Callable[[str], str], scale: ScaleResult) -> str | None:
+def _message_scale_bar(_: Callable[[str], str], scale: ScaleResult) -> Union[str, None]:
     if scale is None:
         return None
     return _('    - Scale:  🥉 <code>{bronze}</code>    🥈 <code>{silver}</code>    🥇 <code>{gold}</code>').format(
@@ -254,7 +254,7 @@ def _message_wave(_: Callable[[str], str], wave: WaveResult, boss_result: BossRe
     return text
 
 
-def _message_wave_sp(_: Callable[[str], str], wave: WaveResult) -> str | None:
+def _message_wave_sp(_: Callable[[str], str], wave: WaveResult) -> Union[str, None]:
     if len(wave.special_weapons) == 0:
         return None
     sp_count = collections.Counter([sp.name for sp in wave.special_weapons])

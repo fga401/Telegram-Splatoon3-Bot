@@ -1,7 +1,7 @@
 import datetime
 import html
 import json
-from typing import Callable
+from typing import Callable, Union
 
 import pytz
 
@@ -39,7 +39,7 @@ class BattleParser:
             my_team=BattleParser.__team_detail(node['myTeam']),
             other_teams=[BattleParser.__team_detail(team) for team in node['otherTeams']],
             duration=node['duration'],
-            start_time=datetime.datetime.fromisoformat(node['playedTime']),
+            start_time=CommonParser.datetime(node['playedTime']),
             awards=[BattleParser.__award_detail(award) for award in node['awards']]
         )
 
@@ -150,7 +150,7 @@ def _message_battle_detail(_: Callable[[str], str], battle: BattleDetail, profil
     return text
 
 
-def _message_count_bar(paints: list[float | int]):
+def _message_count_bar(paints: list[Union[float, int]]):
     total = sum(paints)
     segments: list[int] = [int(score * 10 // total) for score in paints]
     if len(segments) == 3:
@@ -174,7 +174,7 @@ def _message_count_bar(paints: list[float | int]):
         )
 
 
-def _score(score: float | int) -> str:
+def _score(score: Union[float, int]) -> str:
     if isinstance(score, float):
         return f'{score:.1f}'
     elif isinstance(score, int):
