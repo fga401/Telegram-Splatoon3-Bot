@@ -353,8 +353,8 @@ def _message_battle_schedule_query_instruction(_: Callable[[str], str]):
         _('    - X Y: Schedules between X and Y'),
         _('Example:'),
         _('    - /schedules: Default arguments. Next 2 schedules for all modes.'),
-        _('    - /schedules o 20 24: {open} schedules between 20:00 and 24:00.'),
-        _('    - /schedules x a 2: {x} schedules with {area} in next 4 hours if existing.'),
+        _('    - /schedules o 20 24: {open} between 20:00 and 24:00.'),
+        _('    - /schedules x a 2: {x} with {area} in next 4 hours if existing.'),
     ]).format(
         regular=_(ModeEnum.name(ModeEnum.Regular)),
         challenge=_(ModeEnum.name(ModeEnum.Challenge)),

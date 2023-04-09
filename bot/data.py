@@ -65,12 +65,12 @@ class Rule:
 
 
 class RuleEnum:
-    TurfWar = Rule(id='VnNSdWxlLTA=', rule='TURF_WAR', name='')
-    Goal = Rule(id='VnNSdWxlLTM=', rule='GOAL', name='')
-    Area = Rule(id='VnNSdWxlLTE=', rule='AREA', name='')
-    Loft = Rule(id='VnNSdWxlLTI=', rule='LOFT', name='')
-    Clam = Rule(id='VnNSdWxlLTQ=', rule='CLAM', name='')
-    TriColor = Rule(id='VnNSdWxlLTU=', rule='TRI_COLOR', name='')
+    TurfWar = Rule(id='VnNSdWxlLTA=', rule='TURF_WAR', name='TurfWar')
+    Goal = Rule(id='VnNSdWxlLTM=', rule='GOAL', name='Goal')
+    Area = Rule(id='VnNSdWxlLTE=', rule='AREA', name='Area')
+    Loft = Rule(id='VnNSdWxlLTI=', rule='LOFT', name='Loft')
+    Clam = Rule(id='VnNSdWxlLTQ=', rule='CLAM', name='Clam')
+    TriColor = Rule(id='VnNSdWxlLTU=', rule='TRI_COLOR', name='TriColor')
 
 
 # placeholder
