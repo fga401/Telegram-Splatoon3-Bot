@@ -18,6 +18,7 @@
     "version_update_interval_in_seconds": 86400,
     "token_update_interval_in_seconds": 600,
     "monitor_interval_in_seconds": 10,
+    "monitor_auto_stop_in_minutes": 30,
     "graphql_query_map": {
       "SupportButton_SupportChallengeMutation": "991bace9e8c52d63084cd1570a97a5b4",
       "CheckinWithQRCodeMutation": "daffd9621680664dbf19d27e87484ac7",

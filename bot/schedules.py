@@ -224,8 +224,8 @@ class BattleQueryFilter:
     def filter(args: list[str], schedules: Schedules, tz: datetime.tzinfo) -> Schedules:
         mode = set()
         rule = set()
-        lowerbound = datetime.datetime.now()
-        upperbound = datetime.datetime.now()
+        lowerbound = datetime.datetime.now().astimezone(pytz.UTC)
+        upperbound = datetime.datetime.now().astimezone(pytz.UTC)
         alpha: list[str] = []
         digit: list[int] = []
         for arg in args:
@@ -264,12 +264,12 @@ class BattleQueryFilter:
             digit.append(2)  # default time
         if len(digit) == 1:
             N = max(digit[0], 1)
-            lowerbound = datetime.datetime.now(pytz.UTC)
+            lowerbound = datetime.datetime.now().astimezone(pytz.UTC)
             upperbound = lowerbound + datetime.timedelta(hours=2 * (N - 1))
         if len(digit) == 2:
             if digit[1] < digit[0]:
                 digit[1] += 24
-            local = datetime.datetime.now(pytz.UTC).replace(microsecond=0, second=0, minute=0).astimezone(tz)
+            local = datetime.datetime.now().astimezone(pytz.UTC).replace(microsecond=0, second=0, minute=0).astimezone(tz)
             start_offset = digit[0] - local.hour
             end_offset = digit[1] - local.hour
             utc = local.astimezone(pytz.UTC)

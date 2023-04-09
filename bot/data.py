@@ -19,9 +19,11 @@ class BotData:
     GraphQLRequestMap = 'GRAPHQL_REQUEST_MAP'
     RegisteredUsers = 'REGISTERED_USERS'
 
-    StageImageIDs = "STAGE_IMAGE_IDS"
-    BattleImageIDs = "BATTLE_IMAGE_IDS"
-    CoopImageIDs = "COOP_IMAGE_IDS"
+    StageImageIDs = 'STAGE_IMAGE_IDS'
+    BattleImageIDs = 'BATTLE_IMAGE_IDS'
+    CoopImageIDs = 'COOP_IMAGE_IDS'
+
+    MonitorJobs = 'MONITOR_JOBS'
 
 
 class UserData:
@@ -34,7 +36,6 @@ class UserData:
     MessageID_Timezone = 'MSG_ID_TZ'
     LastBattle = 'LAST_BATTLE'
     LastCoop = 'LAST_COOP'
-    Monitoring = 'MONITORING'
 
 
 @dataclass
@@ -521,12 +522,13 @@ async def _init_bot_data(context: ContextTypes.DEFAULT_TYPE):
     context.bot_data.setdefault(BotData.StageImageIDs, dict())
     context.bot_data.setdefault(BotData.BattleImageIDs, dict())
     context.bot_data.setdefault(BotData.CoopImageIDs, dict())
+    context.bot_data.setdefault(BotData.MonitorJobs, set())
 
 
 def init_bot_data(application: Application):
     application.job_queue.run_custom(
         _init_bot_data,
         job_kwargs={
-            'run_date': datetime.datetime.utcnow(),
+            'run_date': datetime.datetime.now().astimezone(pytz.UTC),
             'misfire_grace_time': None,
         })
