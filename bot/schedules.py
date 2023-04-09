@@ -213,7 +213,12 @@ class BattleQueryFilter:
     @staticmethod
     def validate(args: list[str]) -> bool:
         text = ' '.join(args)
-        return BattleQueryFilter.__compiled.match(text) is not None
+        match = BattleQueryFilter.__compiled.match(text)
+        if match is None:
+            return False
+        if len(match.group()) == 0:
+            return False
+        return True
 
     @staticmethod
     def filter(args: list[str], schedules: Schedules, tz: datetime.tzinfo) -> Schedules:
@@ -336,7 +341,7 @@ def _message_battle_schedule_query_instruction(_: Callable[[str], str]):
         _('    - c: {challenge}'),
         _('    - o: {open}'),
         _('    - x: {x}'),
-        _('    - fest: {fest}'),
+        _('    - f: {fest}'),
         _('[RULE]'),
         _('    - t: {turf_war}'),
         _('    - a: {area}'),
