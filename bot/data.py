@@ -72,6 +72,9 @@ class RuleEnum:
     Clam = Rule(id='VnNSdWxlLTQ=', rule='CLAM', name='Clam')
     TriColor = Rule(id='VnNSdWxlLTU=', rule='TRI_COLOR', name='TriColor')
 
+    CoopRegular = Rule(id='COOP', rule='COOP', name='CoopRegular')
+    CoopTeamContest = Rule(id='TEAM_CONTEST', rule='TEAM_CONTEST', name='CoopTeamContest')
+
 
 # placeholder
 _('TurfWar')
@@ -79,6 +82,9 @@ _('Goal')
 _('Area')
 _('Loft')
 _('Clam')
+_('TriColor')
+_('CoopRegular')
+_('CoopTeamContest')
 
 
 @dataclass
@@ -138,13 +144,6 @@ _('FestTriColor')
 _('Private')
 
 
-# _('Regular Battle')
-# _('Anarchy Battle (Series)')
-# _('Anarchy Battle (Open)')
-# _('X Battle')
-# _('Splatfest Battle')
-
-
 @dataclass
 class Stage:
     id: str
@@ -171,6 +170,7 @@ class BattleSetting:
 
 @dataclass
 class CoopSetting:
+    rule: Rule
     stage: Stage
     weapons: tuple[Weapon, Weapon, Weapon, Weapon]
 
@@ -194,13 +194,13 @@ class CoopSchedule(Schedule):
 @dataclass
 class Schedules:
     # TODO: bigRun
-    # TODO: teamContest
     regular: list[BattleSchedule]
     challenge: list[BattleSchedule]
     open: list[BattleSchedule]
     x: list[BattleSchedule]
     fest: list[BattleSchedule]
-    coop: list[CoopSchedule]
+    coop_regular: list[CoopSchedule]
+    coop_team_contest: list[CoopSchedule]
 
 
 class Judgement:

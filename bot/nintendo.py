@@ -137,10 +137,10 @@ async def test2(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def test3(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.warning(f'test')
     profile: Profile = context.user_data[UserData.Profiles][context.user_data[UserData.Current]]
-    data = await battle_detail(profile, "VnNIaXN0b3J5RGV0YWlsLXUtcTRncm9td3dvdDJjdnk1aGFubW06UkVDRU5UOjIwMjMwNDA1VDEyNTU1MV83MzVlYWRmZS04NTkxLTRiN2MtODNlMy1hYjYxMzg1YjdhMWE=")
-    # data = await battles(profile)
+    # data = await battle_detail(profile, "VnNIaXN0b3J5RGV0YWlsLXUtcTRncm9td3dvdDJjdnk1aGFubW06UkVDRU5UOjIwMjMwNDA1VDEyNTU1MV83MzVlYWRmZS04NTkxLTRiN2MtODNlMy1hYjYxMzg1YjdhMWE=")
+    data = await stage_schedule(profile)
     logger.warning(f'home data = {data}')
-    with open('deemed_lose_battle_detail.json', 'w', encoding='utf-8') as f:
+    with open('stage_schedule.json', 'w', encoding='utf-8') as f:
         f.write(data)
 
 

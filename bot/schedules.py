@@ -1,9 +1,9 @@
 import asyncio
 import datetime
-import gettext
 import json
 import logging
 import re
+from itertools import groupby
 from typing import Callable
 
 import cv2
@@ -13,10 +13,9 @@ from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler, Application
 
 import config
-from bot.data import Schedules, BattleSchedule, CoopSchedule, Stage, BotData, Profile, ModeEnum, RuleEnum, BattleSetting, Rule, Weapon, CoopSetting, CommonParser, Mode
+from bot.data import Schedules, BattleSchedule, CoopSchedule, Stage, BotData, Profile, ModeEnum, RuleEnum, BattleSetting, Rule, CoopSetting, CommonParser, Mode
 from bot.nintendo import download_image, stage_schedule
 from bot.utils import whitelist_filter, current_profile, format_schedule_time, translator
-from locales import _
 
 logger = logging.getLogger('bot.schedules')
 
@@ -27,7 +26,7 @@ class ScheduleParser:
         data = json.loads(schedules)
         regular_schedules = [
             BattleSchedule(
-                setting=ScheduleParser.__setting(node['regularMatchSetting'], ModeEnum.Regular),
+                setting=ScheduleParser.__battle_setting(node['regularMatchSetting'], ModeEnum.Regular),
                 start_time=CommonParser.datetime(node['startTime']),
                 end_time=CommonParser.datetime(node['endTime']),
             )
@@ -35,7 +34,7 @@ class ScheduleParser:
         ]
         challenge_schedules = [
             BattleSchedule(
-                setting=ScheduleParser.__setting(node['bankaraMatchSettings'][0], ModeEnum.Challenge),
+                setting=ScheduleParser.__battle_setting(node['bankaraMatchSettings'][0], ModeEnum.Challenge),
                 start_time=CommonParser.datetime(node['startTime']),
                 end_time=CommonParser.datetime(node['endTime']),
             )
@@ -43,7 +42,7 @@ class ScheduleParser:
         ]
         open_schedules = [
             BattleSchedule(
-                setting=ScheduleParser.__setting(node['bankaraMatchSettings'][1], ModeEnum.Open),
+                setting=ScheduleParser.__battle_setting(node['bankaraMatchSettings'][1], ModeEnum.Open),
                 start_time=CommonParser.datetime(node['startTime']),
                 end_time=CommonParser.datetime(node['endTime']),
             )
@@ -51,7 +50,7 @@ class ScheduleParser:
         ]
         x_schedules = [
             BattleSchedule(
-                setting=ScheduleParser.__setting(node['xMatchSetting'], ModeEnum.X),
+                setting=ScheduleParser.__battle_setting(node['xMatchSetting'], ModeEnum.X),
                 start_time=CommonParser.datetime(node['startTime']),
                 end_time=CommonParser.datetime(node['endTime']),
             )
@@ -59,27 +58,27 @@ class ScheduleParser:
         ]
         fest_schedules = [
             BattleSchedule(
-                setting=ScheduleParser.__setting(node['festMatchSetting'], ModeEnum.Fest),
+                setting=ScheduleParser.__battle_setting(node['festMatchSetting'], ModeEnum.Fest),
                 start_time=CommonParser.datetime(node['startTime']),
                 end_time=CommonParser.datetime(node['endTime']),
             )
             for node in data['data']['festSchedules']['nodes'] if node['festMatchSetting'] is not None
         ]
-        coop_schedules = [
+        coop_regular_schedules = [
             CoopSchedule(
-                setting=CoopSetting(
-                    stage=CommonParser.stage(node['setting']['coopStage'], 'thumbnailImage'),
-                    weapons=(
-                        CommonParser.weapon(node['setting']['weapons'][0]),
-                        CommonParser.weapon(node['setting']['weapons'][1]),
-                        CommonParser.weapon(node['setting']['weapons'][2]),
-                        CommonParser.weapon(node['setting']['weapons'][3]),
-                    )
-                ),
+                setting=ScheduleParser.__coop_setting(node['setting'], RuleEnum.CoopRegular),
                 start_time=CommonParser.datetime(node['startTime']),
                 end_time=CommonParser.datetime(node['endTime']),
             )
             for node in data['data']['coopGroupingSchedule']['regularSchedules']['nodes']
+        ]
+        coop_team_contest_schedules = [
+            CoopSchedule(
+                setting=ScheduleParser.__coop_setting(node['setting'], RuleEnum.CoopTeamContest),
+                start_time=CommonParser.datetime(node['startTime']),
+                end_time=CommonParser.datetime(node['endTime']),
+            )
+            for node in data['data']['coopGroupingSchedule']['teamContestSchedules']['nodes']
         ]
 
         return Schedules(
@@ -88,7 +87,8 @@ class ScheduleParser:
             open=open_schedules,
             x=x_schedules,
             fest=fest_schedules,
-            coop=coop_schedules,
+            coop_regular=coop_regular_schedules,
+            coop_team_contest=coop_team_contest_schedules,
         )
 
     @staticmethod
@@ -100,7 +100,7 @@ class ScheduleParser:
         ]
 
     @staticmethod
-    def __setting(node, mode: Mode) -> BattleSetting:
+    def __battle_setting(node, mode: Mode) -> BattleSetting:
         return BattleSetting(
             rule=CommonParser.rule(node['vsRule']),
             mode=mode,
@@ -108,6 +108,19 @@ class ScheduleParser:
                 CommonParser.stage(node['vsStages'][0]),
                 CommonParser.stage(node['vsStages'][1]),
             ),
+        )
+
+    @staticmethod
+    def __coop_setting(node, rule: Rule) -> CoopSetting:
+        return CoopSetting(
+            rule=rule,
+            stage=CommonParser.stage(node['coopStage'], 'thumbnailImage'),
+            weapons=(
+                CommonParser.weapon(node['weapons'][0]),
+                CommonParser.weapon(node['weapons'][1]),
+                CommonParser.weapon(node['weapons'][2]),
+                CommonParser.weapon(node['weapons'][3]),
+            )
         )
 
 
@@ -118,7 +131,7 @@ def bytes_to_image(data: bytes) -> np.ndarray:
 
 
 def battle_key(battle_stages: tuple[Stage, Stage]) -> str:
-    return f'{battle_stages[0].id} {battle_stages[1].id}'
+    return f'battle_{battle_stages[0].id}_{battle_stages[1].id}'
 
 
 async def upload_battle_image(battle_stages: tuple[Stage, Stage], context: ContextTypes.DEFAULT_TYPE):
@@ -141,7 +154,7 @@ async def upload_battle_image(battle_stages: tuple[Stage, Stage], context: Conte
 
 
 def coop_key(coop: CoopSchedule) -> str:
-    return f'{coop.start_time.timestamp()}'
+    return f'coop_{coop.setting.rule.id}_{coop.start_time.timestamp()}'
 
 
 async def upload_coop_image(coop: CoopSchedule, profile: Profile, context: ContextTypes.DEFAULT_TYPE):
@@ -191,7 +204,7 @@ async def update_schedule_image(data: str, profile: Profile, context: ContextTyp
         if battle_key(battle_stage) not in battle_cache:
             upload_battle_tasks.append(upload_battle_image(battle_stage, context))
 
-    coops = [coop for coop in schedules.coop]
+    coops = [coop for coop in schedules.coop_regular + schedules.coop_team_contest]
     upload_coop_tasks = []
     for coop in coops:
         if coop_key(coop) not in coop_cache:
@@ -213,6 +226,8 @@ class BattleQueryFilter:
     @staticmethod
     def validate(args: list[str]) -> bool:
         text = ' '.join(args)
+        if text == '':
+            return True
         match = BattleQueryFilter.__compiled.match(text)
         if match is None:
             return False
@@ -221,7 +236,7 @@ class BattleQueryFilter:
         return True
 
     @staticmethod
-    def filter(args: list[str], schedules: Schedules, tz: datetime.tzinfo) -> Schedules:
+    def filter(args: list[str], schedules: Schedules, tz: datetime.tzinfo) -> list[BattleSchedule]:
         mode = set()
         rule = set()
         lowerbound = datetime.datetime.now().astimezone(pytz.UTC)
@@ -290,7 +305,8 @@ class BattleQueryFilter:
         schedules.open = list(filter(_filter_schedule, schedules.open))
         schedules.x = list(filter(_filter_schedule, schedules.x))
         schedules.fest = list(filter(_filter_schedule, schedules.fest))
-        return schedules
+        ordered_schedules = sorted(schedules.x + schedules.open + schedules.challenge + schedules.regular + schedules.fest, key=lambda x: x.end_time, reverse=True)
+        return ordered_schedules
 
 
 async def output_battle_schedule(schedule: BattleSchedule, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -326,10 +342,9 @@ async def battle_schedule_query(update: Update, context: ContextTypes.DEFAULT_TY
     resp = await stage_schedule(profile)
     schedules = ScheduleParser.schedules(resp)
     filtered_schedules = BattleQueryFilter.filter(args, schedules, pytz.timezone(profile.timezone))
-    ordered_schedules = sorted(filtered_schedules.x + filtered_schedules.open + filtered_schedules.challenge + filtered_schedules.regular + filtered_schedules.fest, key=lambda x: x.end_time, reverse=True)
-    if len(ordered_schedules) == 0:
+    if len(filtered_schedules) == 0:
         await update.message.reply_text(text=_("No matching schedules after filtering."))
-    for schedule in ordered_schedules:
+    for schedule in filtered_schedules:
         await output_battle_schedule(schedule, update, context)
 
 
@@ -379,12 +394,13 @@ class CoopQueryFilter:
         return CoopQueryFilter.__compiled.match(text) is not None
 
     @staticmethod
-    def filter(args: list[str], schedules: Schedules) -> Schedules:
+    def filter(args: list[str], schedules: Schedules) -> list[CoopSchedule]:
         N = 2
         if len(args) > 0 and int(args[0]) > 0:
             N = int(args[0])
-        schedules.coop = schedules.coop[:N]
-        return schedules
+        ordered_schedules = sorted(schedules.coop_regular + schedules.coop_team_contest, key=lambda s: (s.start_time, s.end_time))
+        grouped_schedules = [(k, list(g)) for k, g in groupby(ordered_schedules, key=lambda s: s.start_time)]
+        return [schedule for grouped_schedule in grouped_schedules[:N] for schedule in grouped_schedule[1]][::-1]
 
 
 async def output_coop_schedule(schedule: CoopSchedule, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -404,16 +420,20 @@ async def output_coop_schedule(schedule: CoopSchedule, update: Update, context: 
         time = _('{minute}m').format(minute=minute)
     else:
         time = _('{hour}h {minute}m').format(hour=hour, minute=minute)
-    text = '\n'.join([
+    rule = None
+    if schedule.setting.rule != RuleEnum.CoopRegular:
+        rule = _('<b>Rule</b>: <code>{rule}</code>').format(rule=_(schedule.setting.rule.name))
+    text = '\n'.join(filter(lambda s: s is not None, [
         _('Time: <code>{start_time}</code> ~ <code>{end_time}</code>'),
         _('Stage: <code>{stage}</code>'),
+        rule,
         _('Weapon:'),
         _('    - <code>{weapon_1}</code>'),
         _('    - <code>{weapon_2}</code>'),
         _('    - <code>{weapon_3}</code>'),
         _('    - <code>{weapon_4}</code>'),
         _('{remaining_text}')
-    ]).format(
+    ])).format(
         start_time=format_schedule_time(schedule.start_time.astimezone(pytz.timezone(profile.timezone))),
         end_time=format_schedule_time(schedule.end_time.astimezone(pytz.timezone(profile.timezone))),
         stage=schedule.setting.stage.name,
@@ -436,10 +456,9 @@ async def coop_schedule_query(update: Update, context: ContextTypes.DEFAULT_TYPE
     resp = await stage_schedule(profile)
     schedules = ScheduleParser.schedules(resp)
     filtered_schedules = CoopQueryFilter.filter(args, schedules)
-    ordered_schedules = sorted(filtered_schedules.coop, key=lambda x: x.end_time, reverse=True)
-    if len(ordered_schedules) == 0:
+    if len(filtered_schedules) == 0:
         await update.message.reply_text(text=_("No matching schedules after filtering."))
-    for schedule in ordered_schedules:
+    for schedule in filtered_schedules:
         await output_coop_schedule(schedule, update, context)
 
 
