@@ -62,6 +62,15 @@ class BattleParser:
 
     @staticmethod
     def __player_detail(node) -> BattlePlayer:
+        if node['result'] is not None:
+            result = BattlePlayerResult(
+                kill=node['result']['kill'],
+                death=node['result']['death'],
+                assist=node['result']['assist'],
+                special=node['result']['special'],
+            )
+        else:
+            result = None
         return BattlePlayer(
             id=node['id'],
             name=node['name'],
@@ -71,12 +80,7 @@ class BattleParser:
             paint=node['paint'],
             myself=node['isMyself'],
             weapon=CommonParser.weapon(node['weapon']),
-            result=BattlePlayerResult(
-                kill=node['result']['kill'],
-                death=node['result']['death'],
-                assist=node['result']['assist'],
-                special=node['result']['special'],
-            ),
+            result=result,
             head_gear=BattleParser.__gear_detail(node['headGear']),
             clothing_gear=BattleParser.__gear_detail(node['clothingGear']),
             shoes_gear=BattleParser.__gear_detail(node['shoesGear']),
@@ -196,10 +200,14 @@ def _message_team_detail(_: Callable[[str], str], team: Team, team_name: str) ->
 
 def _message_player_detail(_: Callable[[str], str], player: BattlePlayer) -> str:
     myself = '  ' if not player.myself else '*'
+    if player.result is None:
+        result_text = _('        - K(A)/D/SP: <code>-(-)/-/-</code>')
+    else:
+        result_text = _('        - K(A)/D/SP: <code>{kill}({assist})/{death}/{special}</code>').format(kill=player.result.kill, assist=player.result.assist, death=player.result.death, special=player.result.special),
     return '\n'.join([
         _('<b>{myself}  [ <code>{name}</code> ]</b>').format(myself=myself, name=html.escape(player.name)),
         _('        - Weapon: <code>{weapon}</code>').format(weapon=player.weapon.name),
-        _('        - K(A)/D/SP: <code>{kill}({assist})/{death}/{special}</code>').format(kill=player.result.kill, assist=player.result.assist, death=player.result.death, special=player.result.special),
+        result_text,
         _('        - Point: <code>{paint}</code>').format(paint=player.paint),
     ])
 
