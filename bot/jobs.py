@@ -60,6 +60,7 @@ async def monitor_battle(context: ContextTypes.DEFAULT_TYPE):
     _ = translator(profile)
     job_data: MonitorJobData = context.job.data
     auto_stop_delta = datetime.timedelta(minutes=config.get(config.NINTENDO_AUTO_STOP))
+    retrieve_previous_delta = datetime.timedelta(minutes=config.get(config.NINTENDO_RETRIEVE_PREVIOUS))
 
     resp = await battles(profile)
     battle_histories = BattleParser.battle_histories(resp)
@@ -75,7 +76,7 @@ async def monitor_battle(context: ContextTypes.DEFAULT_TYPE):
         for battle_id in battle_ids[:cnt][::-1]:
             resp = await battle_detail(profile, battle_id)
             detail = BattleParser.battle_detail(resp)
-            if detail.start_time < datetime.datetime.now().astimezone(pytz.UTC) - auto_stop_delta:
+            if detail.start_time < datetime.datetime.now().astimezone(pytz.UTC) - retrieve_previous_delta:
                 continue
             text = _message_battle_detail(_, detail, profile)
             await context.bot.send_message(chat_id=context.job.chat_id, text=text)
@@ -96,7 +97,7 @@ async def monitor_battle(context: ContextTypes.DEFAULT_TYPE):
         for coop_id in coop_ids[:cnt][::-1]:
             resp = await coop_detail(profile, coop_id)
             detail = CoopParser.coop_detail(resp)
-            if detail.start_time < datetime.datetime.now().astimezone(pytz.UTC) - auto_stop_delta:
+            if detail.start_time < datetime.datetime.now().astimezone(pytz.UTC) - retrieve_previous_delta:
                 continue
             text = _message_coop_detail(_, detail, profile)
             await context.bot.send_message(chat_id=context.job.chat_id, text=text)

@@ -203,7 +203,7 @@ def _message_player_detail(_: Callable[[str], str], player: BattlePlayer) -> str
     if player.result is None:
         result_text = _('        - K(A)/D/SP: <code>-(-)/-/-</code>')
     else:
-        result_text = _('        - K(A)/D/SP: <code>{kill}({assist})/{death}/{special}</code>').format(kill=player.result.kill, assist=player.result.assist, death=player.result.death, special=player.result.special),
+        result_text = _('        - K(A)/D/SP: <code>{kill}({assist})/{death}/{special}</code>').format(kill=player.result.kill, assist=player.result.assist, death=player.result.death, special=player.result.special)
     return '\n'.join([
         _('<b>{myself}  [ <code>{name}</code> ]</b>').format(myself=myself, name=html.escape(player.name)),
         _('        - Weapon: <code>{weapon}</code>').format(weapon=player.weapon.name),

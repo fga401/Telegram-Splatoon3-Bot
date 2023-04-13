@@ -1,8 +1,7 @@
 import collections
-import datetime
 import html
 import json
-from typing import Callable, Union
+from typing import Callable, Union, Optional
 
 import pytz
 
@@ -80,7 +79,7 @@ class CoopParser:
         )
 
     @staticmethod
-    def __boss_result(node) -> Union[BossResult, None]:
+    def __boss_result(node) -> Optional[BossResult]:
         if node is None:
             return None
         if 'image' in node['boss']:
@@ -129,7 +128,9 @@ class CoopParser:
         )
 
     @staticmethod
-    def __special_weapon(node) -> SpecialWeapon:
+    def __special_weapon(node) -> Optional[SpecialWeapon]:
+        if node is None:
+            return None
         return SpecialWeapon(
             id=node.get('id', ''),
             weapon_id=node.get('weaponId', 0),
@@ -160,7 +161,7 @@ class CoopParser:
         )
 
     @staticmethod
-    def __scale_result(node) -> Union[ScaleResult, None]:
+    def __scale_result(node) -> Optional[ScaleResult]:
         if node is None:
             return None
         return ScaleResult(
@@ -212,7 +213,7 @@ def _message_smell_bar(smell: int) -> str:
     )
 
 
-def _message_scale_bar(_: Callable[[str], str], scale: ScaleResult) -> Union[str, None]:
+def _message_scale_bar(_: Callable[[str], str], scale: ScaleResult) -> Optional[str]:
     if scale is None:
         return None
     return _('    - Scale:  🥉 <code>{bronze}</code>    🥈 <code>{silver}</code>    🥇 <code>{gold}</code>').format(
@@ -254,7 +255,7 @@ def _message_wave(_: Callable[[str], str], wave: WaveResult, boss_result: BossRe
     return text
 
 
-def _message_wave_sp(_: Callable[[str], str], wave: WaveResult) -> Union[str, None]:
+def _message_wave_sp(_: Callable[[str], str], wave: WaveResult) -> Optional[str]:
     if len(wave.special_weapons) == 0:
         return None
     sp_count = collections.Counter([sp.name for sp in wave.special_weapons])
@@ -266,6 +267,10 @@ def _message_wave_sp(_: Callable[[str], str], wave: WaveResult) -> Union[str, No
 
 
 def _message_player(_: Callable[[str], str], player: CoopPlayerResult) -> str:
+    if player.special_weapon is not None:
+        sp = player.special_weapon.name
+    else:
+        sp = ''
     text = '\n'.join([
         _('    <b>[ <code>{player_name}</code> ]</b>').format(player_name=html.escape(player.player.name)),
         _('        - Boss Defeated: <code>{defeat_enemy_count}</code>').format(defeat_enemy_count=player.defeat_enemy_count),
@@ -273,7 +278,7 @@ def _message_player(_: Callable[[str], str], player: CoopPlayerResult) -> str:
         _('        - Rescue:  🛟 <code>{rescue_count}</code>    ☠ <code>{rescued_count}</code>').format(rescue_count=player.rescue_count, rescued_count=player.rescued_count),
         _('        - Weapons:'),
         *[_('            - <code>{weapon}</code>').format(weapon=weapon.name) for weapon in player.weapons],
-        _('        - Special Weapon: <code>{special_weapon}</code>').format(special_weapon=player.special_weapon.name),
+        _('        - Special Weapon: <code>{special_weapon}</code>').format(special_weapon=sp),
     ])
     return text
 

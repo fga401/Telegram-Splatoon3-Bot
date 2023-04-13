@@ -1,7 +1,7 @@
 import datetime
 import logging
 from dataclasses import dataclass
-from typing import Union
+from typing import Union, Optional
 
 import pytz
 from telegram.ext import ContextTypes, Application
@@ -253,7 +253,7 @@ class Background:
 @dataclass
 class Nameplate:
     background: Background
-    badges: list[Union[Badge, None]]
+    badges: list[Optional[Badge]]
 
 
 @dataclass
@@ -339,7 +339,7 @@ class Coop:
     id: str
     after_grade_name: str
     after_grade_point: int
-    grade_point_diff: Union[str, None]
+    grade_point_diff: Optional[str]
     stage: Stage
     weapons: list[Weapon]
     boss: BossResult
@@ -373,7 +373,7 @@ class SpecialWeapon:
 class CoopPlayerResult:
     player: CoopPlayer
     weapons: list[Weapon]
-    special_weapon: SpecialWeapon
+    special_weapon: Optional[SpecialWeapon]
     defeat_enemy_count: int
     deliver_count: int
     golden_assist_count: int
@@ -445,7 +445,7 @@ class CoopDetail(Coop):
 
 class CommonParser:
     @staticmethod
-    def badge(node) -> Union[Badge, None]:
+    def badge(node) -> Optional[Badge]:
         if node is None:
             return None
         return Badge(

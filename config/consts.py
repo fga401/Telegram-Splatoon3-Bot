@@ -16,6 +16,7 @@ NINTENDO_VERSION_UPDATE_INTERVAL = 'nintendo.version_update_interval_in_seconds'
 NINTENDO_TOKEN_UPDATE_INTERVAL = 'nintendo.token_update_interval_in_seconds'
 NINTENDO_MONITOR_INTERVAL = 'nintendo.monitor_interval_in_seconds'
 NINTENDO_AUTO_STOP = 'nintendo.monitor_auto_stop_in_minutes'
+NINTENDO_RETRIEVE_PREVIOUS = 'nintendo.retrieve_previous_in_minutes'
 
 NINTENDO_PROXY_ENABLED = 'nintendo.proxy.enabled'
 NINTENDO_PROXY_HTTP = 'nintendo.proxy.http'

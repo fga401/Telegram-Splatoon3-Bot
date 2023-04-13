@@ -1,3 +1,4 @@
+import logging
 import os.path
 import sys
 
@@ -45,4 +46,6 @@ def run():
     jobs.init_jobs(application)
     schedules.init_schedules(application)
 
+    # disable job queue logging
+    logging.getLogger("apscheduler.scheduler").propagate = False
     application.run_polling()
