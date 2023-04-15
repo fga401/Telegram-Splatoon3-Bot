@@ -75,6 +75,13 @@ class RuleEnum:
     CoopRegular = Rule(id='COOP', rule='COOP', name='CoopRegular')
     CoopTeamContest = Rule(id='TEAM_CONTEST', rule='TEAM_CONTEST', name='CoopTeamContest')
 
+    @staticmethod
+    def coop_name(rule: Rule):
+        if rule == RuleEnum.CoopTeamContest:
+            return 'CoopTeamContest'
+        else:
+            return 'CoopRegular'
+
 
 # placeholder
 _('TurfWar')
@@ -337,8 +344,8 @@ class BossResult:
 @dataclass
 class Coop:
     id: str
-    after_grade_name: str
-    after_grade_point: int
+    after_grade_name: Optional[str]
+    after_grade_point: Optional[int]
     grade_point_diff: Optional[str]
     stage: Stage
     weapons: list[Weapon]
@@ -429,9 +436,9 @@ class CoopDetail(Coop):
     wave_results: list[WaveResult]
     enemy_results: list[EnemyResult]
     start_time: datetime.datetime
-    rule: str
+    rule: Rule
     danger: float
-    smell: int
+    smell: Optional[int]
     scale: ScaleResult
     job_point: int
     job_score: int

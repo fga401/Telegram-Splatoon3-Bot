@@ -1,11 +1,11 @@
 import collections
 import html
 import json
-from typing import Callable, Union, Optional
+from typing import Callable, Optional
 
 import pytz
 
-from bot.data import CoopDetail, Profile, Coop, CommonParser, BossResult, Boss, CoopPlayerResult, CoopPlayer, Uniform, SpecialWeapon, WaveResult, EventWave, EnemyResult, Enemy, ScaleResult
+from bot.data import CoopDetail, Profile, Coop, CommonParser, BossResult, Boss, CoopPlayerResult, CoopPlayer, Uniform, SpecialWeapon, WaveResult, EventWave, EnemyResult, Enemy, ScaleResult, RuleEnum, Rule
 from bot.utils import format_detail_time
 
 
@@ -16,7 +16,7 @@ class CoopParser:
         return [
             Coop(
                 id=node['id'],
-                after_grade_name=node['afterGrade']['name'],
+                after_grade_name=None if node['afterGrade'] is None else node['afterGrade']['name'],
                 after_grade_point=node['afterGradePoint'],
                 grade_point_diff=node['gradePointDiff'],
                 stage=CommonParser.stage(node['coopStage'], image_name=None),
@@ -35,7 +35,7 @@ class CoopParser:
         node = data['data']['coopHistoryDetail']
         return CoopDetail(
             id=node['id'],
-            after_grade_name=node['afterGrade']['name'],
+            after_grade_name=None if node['afterGrade'] is None else node['afterGrade']['name'],
             after_grade_point=node['afterGradePoint'],
             grade_point_diff=None,
             stage=CommonParser.stage(node['coopStage']),
@@ -68,7 +68,7 @@ class CoopParser:
                 for result in node['enemyResults']
             ],
             start_time=CommonParser.datetime(node['playedTime']),
-            rule=node['rule'],
+            rule=Rule(id=node['rule'], rule=node['rule'], name=''),
             danger=node['dangerRate'],
             smell=node['smellMeter'],
             scale=CoopParser.__scale_result(node['scale']),
@@ -185,12 +185,20 @@ def _message_coop_detail(_: Callable[[str], str], coop: CoopDetail, profile: Pro
         judgement_text = _('{clear_emoji} DEFEAT').format(clear_emoji=_clear_emoji(coop.clear))
     smell_bar = _message_smell_bar(coop.smell)
     player_results = [coop.my_result, *coop.member_results]
+    rule = None
+    if coop.rule != RuleEnum.CoopRegular:
+        rule = _('    - <b>Rule</b>: <code>{rule}</code>').format(rule=_(RuleEnum.coop_name(coop.rule)))
+    grade = None
+    if coop.after_grade_point is not None and coop.after_grade_name is not None:
+        grade = _('    - Grade: <code>{grade_name} {grade_point}</code>').format(grade_name=coop.after_grade_name, grade_point=coop.after_grade_point),
+
     text = '\n'.join(filter(lambda s: s is not None, [
         _('<b>[ {judgement_text} ]</b>  {smell_bar}').format(judgement_text=judgement_text, smell_bar=smell_bar),
         _('    - Start Time: <code>{start_time}</code>').format(start_time=format_detail_time(coop.start_time.astimezone(pytz.timezone(profile.timezone)))),
         _('    - Stage: <code>{stage}</code>').format(stage=coop.stage.name),
+        rule,
         _('    - Hazard Level: <code>{danger}%</code>').format(danger=f'{int(coop.danger * 100):d}'),
-        _('    - Grade: <code>{grade_name} {grade_point}</code>').format(grade_name=coop.after_grade_name, grade_point=coop.after_grade_point),
+        grade,
         _('    - Point: <code>{job_score} * {job_rate} + {job_bonus} = {job_point}</code>').format(job_score=coop.job_score, job_rate=coop.job_rate, job_bonus=coop.job_bonus, job_point=coop.job_point),
         _('    - Count:  🟡 <code>{golden_deliver_count}</code>    🟠 <code>{deliver_count}</code>').format(golden_deliver_count=sum([player.golden_deliver_count for player in player_results]), deliver_count=sum([player.deliver_count for player in player_results])),
         _message_scale_bar(_, coop.scale),
@@ -205,6 +213,8 @@ def _message_coop_detail(_: Callable[[str], str], coop: CoopDetail, profile: Pro
 
 
 def _message_smell_bar(smell: int) -> str:
+    if smell is None:
+        return ''
     remain = 5 - smell
     return '[ ({smell}/5) {smell_segment}&gt;{remain_segment} ]'.format(
         smell=smell,
@@ -224,7 +234,7 @@ def _message_scale_bar(_: Callable[[str], str], scale: ScaleResult) -> Optional[
 
 
 def _message_wave(_: Callable[[str], str], wave: WaveResult, boss_result: BossResult, clear: bool) -> str:
-    if wave.wave_number == 4:
+    if wave.wave_number == 4 and boss_result is not None:
         wave_name = 'XTRAWAVE'
         wave_banner = boss_result.boss.name
     else:
