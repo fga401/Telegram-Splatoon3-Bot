@@ -47,5 +47,5 @@ def run():
     schedules.init_schedules(application)
 
     # disable job queue logging
-    logging.getLogger("apscheduler.scheduler").propagate = False
+    logging.getLogger("apscheduler.scheduler").disabled = True
     application.run_polling()

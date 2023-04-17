@@ -190,7 +190,7 @@ def _message_coop_detail(_: Callable[[str], str], coop: CoopDetail, profile: Pro
         rule = _('    - <b>Rule</b>: <code>{rule}</code>').format(rule=_(RuleEnum.coop_name(coop.rule)))
     grade = None
     if coop.after_grade_point is not None and coop.after_grade_name is not None:
-        grade = _('    - Grade: <code>{grade_name} {grade_point}</code>').format(grade_name=coop.after_grade_name, grade_point=coop.after_grade_point),
+        grade = _('    - Grade: <code>{grade_name} {grade_point}</code>').format(grade_name=coop.after_grade_name, grade_point=coop.after_grade_point)
 
     text = '\n'.join(filter(lambda s: s is not None, [
         _('<b>[ {judgement_text} ]</b>  {smell_bar}').format(judgement_text=judgement_text, smell_bar=smell_bar),
