@@ -16,8 +16,9 @@
     "s3s_version": "0.3.4",
     "webview_version": "3.0.0-2857bc50",
     "version_update_interval_in_seconds": 86400,
-    "token_update_interval_in_seconds": 600,
+    "token_update_interval_in_seconds": 86400,
     "monitor_interval_in_seconds": 10,
+    "monitor_freeze_time_in_seconds": 120,
     "monitor_auto_stop_in_minutes": 30,
     "retrieve_previous_in_minutes": 60,
     "graphql_query_map": {

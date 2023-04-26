@@ -15,6 +15,7 @@ NINTENDO_GRAPHQL_REQUEST_MAP = 'nintendo.graphql_query_map'
 NINTENDO_VERSION_UPDATE_INTERVAL = 'nintendo.version_update_interval_in_seconds'
 NINTENDO_TOKEN_UPDATE_INTERVAL = 'nintendo.token_update_interval_in_seconds'
 NINTENDO_MONITOR_INTERVAL = 'nintendo.monitor_interval_in_seconds'
+NINTENDO_MONITOR_FREEZE_TIME = 'nintendo.monitor_freeze_time_in_seconds'
 NINTENDO_AUTO_STOP = 'nintendo.monitor_auto_stop_in_minutes'
 NINTENDO_RETRIEVE_PREVIOUS = 'nintendo.retrieve_previous_in_minutes'
 

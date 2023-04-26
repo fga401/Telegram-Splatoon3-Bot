@@ -60,7 +60,11 @@ async def monitor_battle(context: ContextTypes.DEFAULT_TYPE):
     _ = translator(profile)
     job_data: MonitorJobData = context.job.data
     auto_stop_delta = datetime.timedelta(minutes=config.get(config.NINTENDO_AUTO_STOP))
+    freeze_time = datetime.timedelta(seconds=config.get(config.NINTENDO_MONITOR_FREEZE_TIME))
     retrieve_previous_delta = datetime.timedelta(minutes=config.get(config.NINTENDO_RETRIEVE_PREVIOUS))
+
+    if job_data.last_update_time > datetime.datetime.now().astimezone(pytz.UTC) - freeze_time:
+        return
 
     resp = await battles(profile)
     battle_histories = BattleParser.battle_histories(resp)
